@@ -11,9 +11,11 @@ reads and updates it.
 ## Quick start (with Cowork / Claude)
 
 1. Get the Notion structure (see `notion/README.md`).
-2. Copy `.env.example` to `.env` and set `NOTION_ROOT_PAGE_ID`.
-3. Connect Notion to Claude, then give it `AGENT.md` plus the line
-   `NOTION_ROOT_PAGE_ID=<your id>` as project instructions.
+2. Run `python3 setup.py`. It asks for your name, your Notion root page link,
+   language and time zone, saves them in `.env`, and writes `AGENT.local.md`.
+3. Connect Notion to Claude and give it **`AGENT.local.md`**: one file with
+   the guide and your settings. Re-run setup after pulling a new `AGENT.md`
+   (`python3 setup.py --render` skips the questions).
 
 ## Roadmap
 

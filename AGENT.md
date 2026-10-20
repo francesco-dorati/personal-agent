@@ -11,12 +11,17 @@ Read this whole guide before your first action in a session.
 
 ## 1. Setup: the root page
 
-Everything lives under one Notion page, the **root page**.
+Everything lives under one Notion page, the **root page**. Its ID is the
+setting `NOTION_ROOT_PAGE_ID`. Look for it in this order:
 
-- Its ID is the setting `NOTION_ROOT_PAGE_ID`: an environment variable for
-  scripts, or a line in the instructions the user gave you
-  (`NOTION_ROOT_PAGE_ID=...`).
-- If you cannot find it, ask the user for the root page link. Do not guess.
+1. The instructions the user gave you (a line `NOTION_ROOT_PAGE_ID=...`).
+2. The `.env` file in the same folder as this guide.
+3. An environment variable of the same name (scripts, servers).
+
+If none has it, ask the user for the root page link. Do not guess.
+
+If this guide has a section **0. This installation** (added by `setup.py`),
+its settings (root page, the user's name, language, time zone) apply.
 
 ## 2. Discovery: how to find things
 
