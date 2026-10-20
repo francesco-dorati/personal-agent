@@ -23,6 +23,21 @@ If none has it, ask the user for the root page link. Do not guess.
 If this guide has a section **0. This installation** (added by `setup.py`),
 its settings (root page, the user's name, language, time zone) apply.
 
+## 1b. Tools
+
+If the **personal-agent** tools are available, use them first and prefer
+them over a generic Notion connector:
+
+- `overview`: start every session with it instead of exploring Notion by hand.
+- `find`: items of one database, filtered (e.g. meetings on a date).
+- `get`: one item with its links and page content (e.g. meeting notes).
+- `person`: a person by name, tolerating misspellings. Use its spelling.
+- `agenda`: what is dated in a period, plus overdue items.
+- Until personal-agent has write tools, write through the Notion connector,
+  following section 6.
+
+Without these tools, explore Notion as described in section 2.
+
 ## 2. Discovery: how to find things
 
 The structure describes itself. Do this at the **start of every session**,
