@@ -30,13 +30,13 @@ misspelled names and returns compact text.
 | `overview` | Map of the workspace: sections, pages, databases, what each is for, item counts | `overview()` |
 | `find` | Items of one database filtered by property, links shown as names | `find("Interactions", {"Date": "yesterday"})` |
 | `get` | One item with all properties, links (with IDs) and page content | `get("INT-14")`, `get("Profile")` |
-| `person` | A person by name, tolerating typos; asks when ambiguous | `person("Banffy")` → Tommaso Banfi |
+| `person` | A person by name, tolerating typos; asks when ambiguous | `person("Francss")` → Francesco |
 | `agenda` | Everything dated in a period, by day, plus overdue items | `agenda("today", "+7d")` |
 
 `find` conditions: `"OPEN"` equals (text: contains) · `"!=DONE"` · `"~word"`
 contains · `">=2026-10-01"` · `"<=+7d"` · `">5"` · `"empty"` · `"not empty"`.
 Dates accept `YYYY-MM-DD`, `today`, `yesterday`, `tomorrow`, `+Nd`, `-Nd`.
-Links accept a name or an ID (`{"People": "Acar Cihan"}`, `{"Goals": "GOAL-4"}`).
+Links accept a name or an ID (`{"People": "..."}`, `{"Goals": "GOAL-4"}`).
 
 ### Command line
 
