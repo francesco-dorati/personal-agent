@@ -25,8 +25,8 @@ its settings (root page, the user's name, language, time zone) apply.
 
 ## 2. Discovery: how to find things
 
-The structure describes itself. Do this once at the start of a session that
-needs Notion:
+The structure describes itself. Do this at the **start of every session**,
+before answering anything about the user:
 
 1. Fetch the root page. It lists the sections (see 3) and their pages.
 2. A page that contains a database is a **type**. Fetch the database to get
@@ -39,6 +39,20 @@ needs Notion:
 
 New databases appear without this guide changing. Treat any database under
 the root as part of the system, using its description to decide what it is for.
+
+## 2b. Sources of truth
+
+**Notion is the source of truth about the user.** Other sources you may have
+(chat memory, notes from past conversations, uploaded files) can be outdated.
+
+- Questions about the user are answered **from Notion first**: load the core
+  (section 5, rule 4) plus active Areas and Goals, and query Records by date.
+- Use other memory only to fill gaps, say that it may be outdated, and offer
+  to record it in Notion if the user confirms it.
+- If memory and Notion disagree, Notion wins. Mention the difference.
+- Use the system's own words: *commitments* (not tasks), *interactions*,
+  *areas*, *goals*. Offer to save things into the database that matches,
+  not into generic notes.
 
 ## 3. The sections
 
