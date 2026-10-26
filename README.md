@@ -32,6 +32,12 @@ misspelled names and returns compact text.
 | `get` | One item with all properties, links (with IDs) and page content | `get("INT-14")`, `get("Profile")` |
 | `person` | A person by name, tolerating typos; asks when ambiguous | `person("Banffy")` → Tommaso Banfi |
 | `agenda` | Everything dated in a period, by day, plus overdue items | `agenda("today", "+7d")` |
+| `guide` | The agent guide (`AGENT.md`) with this installation's settings | `guide()` |
+
+The server also offers the guide as a **prompt**, `start-session` (guide +
+current workspace map in one click; in Claude Desktop under **+**), and as a
+**resource**, `guide://agent`. With the server installed there is nothing to
+paste into project instructions.
 
 `find` conditions: `"OPEN"` equals (text: contains) · `"!=DONE"` · `"~word"`
 contains · `">=2026-10-01"` · `"<=+7d"` · `">5"` · `"empty"` · `"not empty"`.
@@ -40,20 +46,35 @@ Links accept a name or an ID (`{"People": "Acar Cihan"}`, `{"Goals": "GOAL-4"}`)
 
 ### Command line
 
-Every tool also runs in the terminal and prints exactly what the model receives:
+`agent server …` calls the MCP server's tools the way a model does and prints
+exactly what it gets back. `agent server list` shows every tool with its
+signature, the description the model reads, and examples.
 
 ```bash
 uv sync                                           # once: install
-uv run agent overview                             # map of the workspace
-uv run agent overview --refresh                   # rebuild the map after structure changes
-uv run agent find interactions -w Date=yesterday
-uv run agent find commitments -w Status=OPEN -w "Due<=+7d" --sort Due
-uv run agent find people -w Organization=Bosch -n 5
-uv run agent get INT-14                           # by ID, page link or title
-uv run agent person "Banffy"
-uv run agent agenda yesterday +7d
-uv run agent --stats agenda                       # also show time and Notion requests
+uv run agent server list                          # all tools, syntax, descriptions
+uv run agent server overview                      # map of the workspace
+uv run agent server overview refresh=true         # rebuild the map after structure changes
+uv run agent server find Interactions '{"Date": "yesterday"}'
+uv run agent server find database=Commitments where='{"Status": "OPEN", "Due": "<=+7d"}' sort=Due
+uv run agent server find '{"database": "People", "where": {"Organization": "Bosch"}, "limit": 5}'
+uv run agent server search Acar                   # by name, across all databases
+uv run agent server get INT-14                    # by ID, page link or title
+uv run agent server get '{"item": ["INT-14", "PER-2"]}'   # several at once
+uv run agent server get INT-14 offset=8000        # the rest of a long page
+uv run agent server person "Banffy"
+uv run agent server agenda yesterday +7d
+uv run agent server guide                         # the guide as the model receives it
+uv run agent --stats server agenda                # also show time and Notion requests
+uv run agent server log                           # last 20 calls: who called what, how long, how big
+uv run agent eval                                 # regression checks (see evals/README.md)
 ```
+
+Arguments can be positional (in the order `list` shows), `name=value`, or the
+exact JSON object a model sends. The call is printed on stderr first, so you
+see the request and then the result. Every call, from a model or from the
+terminal, is also logged to `logs/calls.jsonl` (git-ignored; it contains the
+arguments, so it can contain names).
 
 ### Running it
 
@@ -92,6 +113,8 @@ Notes:
 | `query.py` | `find` conditions → Notion filters and sorts |
 | `blocks.py` | Page content → compact Markdown-like text |
 | `tools.py` | The tools as plain functions returning text |
+| `guide.py` | `AGENT.md` + installation settings, served by the server |
+| `evals.py` | Runs the regression cases in `evals/` |
 | `server.py` / `cli.py` | Expose the same tools over MCP / in the terminal |
 
 ## Roadmap

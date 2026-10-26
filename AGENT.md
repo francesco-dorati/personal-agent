@@ -30,7 +30,9 @@ them over a generic Notion connector:
 
 - `overview`: start every session with it instead of exploring Notion by hand.
 - `find`: items of one database, filtered (e.g. meetings on a date).
-- `get`: one item with its links and page content (e.g. meeting notes).
+- `search`: items by name across all databases, when you don't know where they live.
+- `get`: one item (or a list) with its links and page content (e.g. meeting notes).
+  Long pages are cut with a notice; continue with `offset`.
 - `person`: a person by name, tolerating misspellings. Use its spelling.
 - `agenda`: what is dated in a period, plus overdue items.
 - Until personal-agent has write tools, write through the Notion connector,

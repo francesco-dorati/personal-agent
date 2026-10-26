@@ -6,11 +6,12 @@ receives.
 """
 from __future__ import annotations
 
+import difflib
 import re
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from .blocks import render_page
+from .blocks import render_text, window
 from .names import Item
 from .notion_api import NotionError
 
@@ -114,17 +115,14 @@ def find(ws: Workspace, database: str, where: dict[str, str] | None = None, sear
          sort: str | None = None, limit: int = 20) -> str:
     """Rows of one database, filtered. Links are shown as names."""
     reg = ws.registry()
-    try:
-        db = resolve_database(reg, database)
-        conditions = dict(where or {})
-        if search:
-            title = next(p.name for p in db.properties if p.type == "title")
-            conditions[title] = f"~{search}"
-        notes: list[str] = []
-        notion_filter = build_filter(reg, db, conditions, ws.names, ws.settings.timezone, notes)
-        sorts = build_sort(db, sort)
-    except QueryError as err:
-        return f"Error: {err}"
+    db = resolve_database(reg, database)
+    conditions = dict(where or {})
+    if search:
+        title = next(p.name for p in db.properties if p.type == "title")
+        conditions[title] = f"~{search}"
+    notes: list[str] = []
+    notion_filter = build_filter(reg, db, conditions, ws.names, ws.settings.timezone, notes)
+    sorts = build_sort(db, sort)
     limit = max(1, min(limit, MAX_LIMIT))
     rows = ws.api.query(db.data_source_id, filter=notion_filter, sorts=sorts, limit=limit + 1)
     more = len(rows) > limit
@@ -142,7 +140,11 @@ def find(ws: Workspace, database: str, where: dict[str, str] | None = None, sear
     for row in rows:
         values = {name: decode(prop) for name, prop in row["properties"].items()}
         blocks.append(format_row(db, norm_id(row["id"]), _resolve_relations(ws, reg, db, values)))
-    tail = f"\n\nMore results exist: narrow with `where` or raise `limit` (max {MAX_LIMIT})." if more else ""
+    if more:
+        hint = "narrow with `where` or `search`" + (f", or raise `limit` (max {MAX_LIMIT})" if limit < MAX_LIMIT else "")
+        tail = f"\n\nShowing the first {len(rows)}; more exist: {hint}."
+    else:
+        tail = ""
     return head + "\n\n" + "\n\n".join(blocks) + tail
 
 
@@ -173,7 +175,8 @@ def _row_database(reg: Registry, page: dict) -> Database | None:
 
 def _locate(ws: Workspace, item: str, database: str | None) -> tuple[str, Database | None] | str:
     """Find a page from an ID like INT-14, a page ID or link, or a title.
-    Returns (page_id, database or None) or an error/choice message."""
+    Returns (page_id, database or None), or a message asking which of several items is meant.
+    Raises QueryError when nothing matches."""
     reg = ws.registry()
     label = LABEL_RE.match(item)
     if label:
@@ -181,15 +184,14 @@ def _locate(ws: Workspace, item: str, database: str | None) -> tuple[str, Databa
         if db:
             prop = next(p for p in db.properties if p.type == "unique_id" and p.prefix.upper() == label.group(1).upper())
             rows = ws.api.query(db.data_source_id, filter={"property": prop.name, "unique_id": {"equals": int(label.group(2))}}, limit=1)
-            return (norm_id(rows[0]["id"]), db) if rows else f"Error: no item {item.upper()} in {db.name}."
+            if not rows:
+                raise QueryError(f"No item {item.upper()} in {db.name}.")
+            return norm_id(rows[0]["id"]), db
     hexid = HEX_RE.search(item.replace("-", ""))
     if hexid:
         return hexid.group(0).lower(), None
     # By title: in one database, or everywhere (databases and text pages).
-    try:
-        dbs = [resolve_database(reg, database)] if database else reg.databases
-    except QueryError as err:
-        return f"Error: {err}"
+    dbs = [resolve_database(reg, database)] if database else reg.databases
     candidates: list[tuple[Item, float]] = []
     for db in dbs:
         candidates += ws.names.match(db, item, cutoff=0.7)
@@ -200,7 +202,7 @@ def _locate(ws: Workspace, item: str, database: str | None) -> tuple[str, Databa
                 candidates.append((Item(page.page_id, page.name, "", "page"), score))
     candidates.sort(key=lambda c: -c[1])
     if not candidates:
-        return f"Error: nothing called '{item}'. Try find(..., search=...) or check the spelling."
+        raise QueryError(f"Nothing called '{item}'. Try find(..., search=...) or check the spelling.")
     best, score = candidates[0]
     close = [c for c in candidates[1:] if c[1] >= score - 0.05]
     if close and score < 1.0:
@@ -209,15 +211,19 @@ def _locate(ws: Workspace, item: str, database: str | None) -> tuple[str, Databa
     return best.page_id, reg.find_database(best.database)
 
 
-def get(ws: Workspace, item: str, database: str | None = None) -> str:
-    """One item with all its properties, links (with IDs) and page content."""
+CONTENT_CHARS = 8000        # page content returned per call for one item
+BATCH_CHARS = 12000         # total page content shared by the items of a batch
+MAX_BATCH = 10
+
+
+def _get_one(ws: Workspace, item: str, database: str | None, offset: int, max_chars: int) -> str:
     located = _locate(ws, item, database)
     if isinstance(located, str):
         return located
     page_id, db = located
     page = _load_row(ws, page_id)
     if page is None:
-        return f"Error: no page with ID {page_id}, or the integration can't see it."
+        raise QueryError(f"No page with ID {page_id}, or the integration can't see it.")
     reg = ws.registry()
     db = db or _row_database(reg, page)
     values = {name: decode(prop) for name, prop in page.get("properties", {}).items()}
@@ -236,9 +242,78 @@ def get(ws: Workspace, item: str, database: str | None = None) -> str:
                          else (items[p].title if p in items else p) for p in value]
             shown[prop.name] = value
         head = f"[{db.name}] " + format_row(db, page_id, shown)
-    body = render_page(ws.api, page_id)
+    text = render_text(ws.api, page_id)
     edited = page.get("last_edited_time", "")[:10]
-    return f"{head}\n  Last edited: {edited}\n\nPage content:\n{body or '(empty)'}"
+    heading = "Page content:"
+    if offset >= len(text) > 0:
+        body = f"(no content after character {offset}: the page has {len(text)} characters)"
+    else:
+        chunk, end = window(text, offset, max_chars)
+        body = chunk or "(empty)"
+        if offset or end < len(text):
+            heading = f"Page content (characters {offset}-{end} of {len(text)}):"
+        if end < len(text):
+            body += (f"\n… {len(text) - end} more characters. "
+                     f"Continue with get(item=\"{page_id}\", offset={end}).")
+    return f"{head}\n  Last edited: {edited}\n\n{heading}\n{body}"
+
+
+def get(ws: Workspace, item: str | list[str], database: str | None = None, offset: int = 0) -> str:
+    """One item (or several) with all properties, links (with IDs) and page content."""
+    if isinstance(item, str):
+        return _get_one(ws, item, database, max(0, offset), CONTENT_CHARS)
+    if not item:
+        raise QueryError("`item` is an empty list.")
+    if len(item) > MAX_BATCH:
+        raise QueryError(f"At most {MAX_BATCH} items at once; got {len(item)}.")
+    if offset:
+        raise QueryError("`offset` works with a single item. Open it alone to read the rest of its content.")
+    budget = max(1500, BATCH_CHARS // len(item))
+    parts = []
+    for one in item:
+        try:
+            parts.append(_get_one(ws, one, database, 0, budget))
+        except QueryError as err:          # one bad ID must not hide the others
+            parts.append(f"{one}: {err}")
+    return ("\n\n" + "=" * 40 + "\n\n").join(parts)
+
+
+MAX_SEARCH = 50
+SEARCH_CUTOFF = 0.7
+
+
+def search(ws: Workspace, text: str, databases: list[str] | None = None, limit: int = 15) -> str:
+    """Titles and IDs matching `text` across the whole workspace (or the given databases)."""
+    text = text.strip()
+    if not text:
+        raise QueryError("Give some text to search for.")
+    reg = ws.registry()
+    dbs = [resolve_database(reg, name) for name in databases] if databases else reg.databases
+    limit = max(1, min(limit, MAX_SEARCH))
+    hits: list[tuple[float, int, str]] = []
+    for db in dbs:
+        for found, score in ws.names.match(db, text, cutoff=SEARCH_CUTOFF):
+            label = f"{found.label} · " if found.label else ""
+            fuzzy = f"  (match {int(score * 100)}%)" if score < 0.9 else ""
+            hits.append((score, db.order, f"- {label}{found.title}  [{db.name}]{fuzzy}"))
+    if not databases:
+        q = text.lower()
+        for page in reg.pages:
+            name = page.name.lower()
+            score = 1.0 if q == name else 0.9 if q in name else difflib.SequenceMatcher(None, q, name).ratio()
+            if score >= SEARCH_CUTOFF:
+                hits.append((round(score, 2), page.order, f"- {page.name}  [page]"))
+    hits.sort(key=lambda h: (-h[0], h[1]))
+    scope = f" in {', '.join(db.name for db in dbs)}" if databases else ""
+    if not hits:
+        return (f"Search '{text}'{scope}: no title or ID matches. Try another spelling or a shorter word. "
+                "Search covers titles and IDs only; text inside notes is not searched.")
+    plural = "es" if len(hits) != 1 else ""
+    out = [f"Search '{text}'{scope}: {len(hits)} match{plural}", *[h[2] for h in hits[:limit]]]
+    if len(hits) > limit:
+        out.append(f"\nShowing the first {limit} of {len(hits)}. Narrow with `databases` or a more specific text.")
+    out.append("\nTitles and IDs only. Open an item with get(<ID>) to read its content.")
+    return "\n".join(out)
 
 
 def person(ws: Workspace, name: str) -> str:
@@ -246,7 +321,7 @@ def person(ws: Workspace, name: str) -> str:
     reg = ws.registry()
     people = next((d for d in reg.databases if d.name.lower() in ("people", "contacts")), None)
     if people is None:
-        return "Error: no People database in the workspace."
+        raise QueryError("No People database in the workspace.")
     matches = ws.names.match(people, name, cutoff=0.5)
     if not matches:
         return f"No person matches '{name}'. Use find('{people.name}', search=...) to browse."
@@ -283,14 +358,12 @@ def agenda(ws: Workspace, start: str = "today", end: str = "+7d") -> str:
     """Everything dated in a period across the workspace, plus overdue items."""
     reg = ws.registry()
     tz = ws.settings.timezone
-    try:
-        first, last = parse_date(start, tz), parse_date(end, tz)
-    except QueryError as err:
-        return f"Error: {err}"
+    first, last = parse_date(start, tz), parse_date(end, tz)
     if last < first:
         first, last = last, first
     by_day: dict[str, list[str]] = {}
     overdue: list[str] = []
+    capped: list[str] = []
     for db in reg.databases:
         props = _date_props(db)
         if not props:
@@ -304,6 +377,8 @@ def agenda(ws: Workspace, start: str = "today", end: str = "+7d") -> str:
             not_closed = [{"property": status[0], status[1]: {"does_not_equal": c}} for c in status[2]]
             late_conds = [{"and": [{"property": p, "date": {"before": first}}, *not_closed]} for p in props]
             late = ws.api.query(db.data_source_id, filter=late_conds[0] if len(late_conds) == 1 else {"or": late_conds}, limit=50)
+        if len(rows) >= 100 or len(late) >= 50:
+            capped.append(db.name)
         for rows_, bucket in ((rows, "range"), (late, "late")):
             for row in rows_:
                 values = {n: decode(p) for n, p in row["properties"].items()}
@@ -332,4 +407,7 @@ def agenda(ws: Workspace, start: str = "today", end: str = "+7d") -> str:
         out += ["", f"{day} ({weekday})"] + by_day[day]
     if len(out) == 1:
         out.append("Nothing dated in this period and nothing overdue.")
+    if capped:
+        out += ["", f"Note: {', '.join(capped)} may have more items than shown (row cap reached). "
+                    "Use a shorter period, or find(...) with a date filter."]
     return "\n".join(out)

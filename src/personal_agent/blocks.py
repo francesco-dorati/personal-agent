@@ -6,13 +6,22 @@ from .notion_api import NotionAPI, plain_text
 MAX_DEPTH = 3
 
 
-def render_page(api: NotionAPI, page_id: str, max_chars: int = 8000) -> str:
+def render_text(api: NotionAPI, page_id: str) -> str:
+    """The whole page content as text (no limit)."""
     lines: list[str] = []
     _render(api, page_id, 0, lines)
-    text = "\n".join(lines).strip()
-    if len(text) > max_chars:
-        text = text[:max_chars].rstrip() + f"\n… (truncated, {len(text) - max_chars} more characters)"
-    return text
+    return "\n".join(lines).strip()
+
+
+def window(text: str, offset: int, max_chars: int) -> tuple[str, int]:
+    """`text` from `offset`, at most `max_chars` long, cut at a line break when one is near.
+    Returns (chunk, end): continue at `end`."""
+    end = min(len(text), offset + max_chars)
+    if end < len(text):
+        cut = text.rfind("\n", offset + int(max_chars * 0.7), end)
+        if cut != -1:
+            end = cut + 1
+    return text[offset:end].rstrip("\n"), end
 
 
 def _render(api: NotionAPI, block_id: str, depth: int, lines: list[str]) -> None:

@@ -1,0 +1,152 @@
+[
+  {
+    "name": "overview-lists-core-databases",
+    "question": "What do you know about how my workspace is organized?",
+    "calls": [
+      {
+        "tool": "overview",
+        "args": {}
+      }
+    ],
+    "expect": [
+      "People (database",
+      "Interactions (database",
+      "Commitments (database"
+    ],
+    "why": "The agent must discover the structure from the root page."
+  },
+  {
+    "name": "guide-has-installation-section",
+    "calls": [
+      {
+        "tool": "guide",
+        "args": {}
+      }
+    ],
+    "expect": [
+      "## 0. This installation",
+      "## 5. Reading"
+    ],
+    "why": "The guide served by the server must carry the user's settings."
+  },
+  {
+    "name": "misspelled-database-gets-suggestion",
+    "calls": [
+      {
+        "tool": "find",
+        "args": {
+          "database": "Peple"
+        }
+      }
+    ],
+    "expect": [
+      "No database called",
+      "People"
+    ],
+    "why": "Errors must tell the model how to fix the call."
+  },
+  {
+    "name": "unknown-option-lists-options",
+    "calls": [
+      {
+        "tool": "find",
+        "args": {
+          "database": "Commitments",
+          "where": {
+            "Status": "not-a-status"
+          }
+        }
+      }
+    ],
+    "expect": [
+      "is not an option",
+      "Options:"
+    ],
+    "why": "The model must not invent select values."
+  },
+  {
+    "name": "empty-person-search-is-handled",
+    "calls": [
+      {
+        "tool": "person",
+        "args": {
+          "name": "Zzyzx Qwerty"
+        }
+      }
+    ],
+    "expect": [
+      "No person matches"
+    ],
+    "why": "No crash and no invented person when nobody matches."
+  },
+  {
+    "name": "search-finds-people-by-name",
+    "question": "Do I have anything on Acar?",
+    "calls": [
+      {
+        "tool": "search",
+        "args": {
+          "text": "Acar"
+        }
+      }
+    ],
+    "expect": [
+      "Search 'Acar'",
+      "[People]"
+    ],
+    "why": "A name must be findable without knowing the database."
+  },
+  {
+    "name": "search-no-match-says-titles-only",
+    "calls": [
+      {
+        "tool": "search",
+        "args": {
+          "text": "Zzyzx Qwerty"
+        }
+      }
+    ],
+    "expect": [
+      "no title or ID matches",
+      "titles and IDs only"
+    ],
+    "why": "The model must know search does not read note text."
+  },
+  {
+    "name": "get-several-reports-bad-id-and-continues",
+    "calls": [
+      {
+        "tool": "get",
+        "args": {
+          "item": [
+            "INT-999999",
+            "Profile"
+          ]
+        }
+      }
+    ],
+    "expect": [
+      "INT-999999:",
+      "Page content"
+    ],
+    "why": "One bad ID in a batch must not hide the others."
+  },
+  {
+    "name": "get-offset-needs-single-item",
+    "calls": [
+      {
+        "tool": "get",
+        "args": {
+          "item": [
+            "Profile"
+          ],
+          "offset": 100
+        }
+      }
+    ],
+    "expect": [
+      "offset"
+    ],
+    "why": "Paging is for one item at a time."
+  }
+]

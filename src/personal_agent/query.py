@@ -23,7 +23,7 @@ from .registry import Database, Property, Registry
 
 
 class QueryError(ValueError):
-    """A problem the model can fix by changing its arguments."""
+    """A problem the model can fix by changing its arguments. Reaches the model as an error result."""
 
 
 def _closest(word: str, choices: list[str], n: int = 3) -> str:
