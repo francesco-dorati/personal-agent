@@ -8,6 +8,7 @@ refresh. The result is cached in `.cache/registry.json`.
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -86,7 +87,9 @@ class Registry:
     # -- persistence --------------------------------------------------------
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False))
+        tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False))
+        tmp.replace(path)                    # atomic: readers never see a half-written file
 
     @classmethod
     def load(cls, path: Path) -> "Registry":

@@ -6,6 +6,8 @@ receives.
 """
 from __future__ import annotations
 
+import threading
+
 import difflib
 import re
 from datetime import date, datetime
@@ -31,6 +33,21 @@ def _count(db: Database) -> str:
 def _one_line(text: str, limit: int = 140) -> str:
     text = " ".join(text.split())
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+def refresh(ws: Workspace) -> str:
+    """Start reloading the workspace map and every database's names. It takes 1-2 minutes, longer than a
+    chat client waits, so it runs in the background and the old copy keeps being served meanwhile."""
+    if not ws._refreshing.acquire(blocking=False):
+        return "A refresh is already running. It finishes within a couple of minutes."
+
+    def run():
+        try:
+            ws.refresh_all()
+        finally:
+            ws._refreshing.release()
+    threading.Thread(target=run, daemon=True).start()
+    return "Refresh started in the background (1-2 minutes). Answers use the current copy until it finishes."
 
 
 def overview(ws: Workspace, refresh: bool = False) -> str:

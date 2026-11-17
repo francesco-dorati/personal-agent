@@ -1,0 +1,18 @@
+[Unit]
+Description=Personal Agent MCP server (HTTP, localhost only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jetson
+WorkingDirectory=/home/jetson/personal-agent
+ExecStart=/home/jetson/personal-agent/.venv/bin/agent-mcp --transport http --host 127.0.0.1 --port 8765
+Restart=always
+RestartSec=5
+# The server keeps its secrets in .env next to the code; nothing else may read it.
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

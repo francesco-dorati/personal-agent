@@ -135,7 +135,7 @@ def _condition(reg: Registry, db: Database, prop: Property, raw: str, names: Nam
         target = reg.database_by_id(prop.relation_to)
         if target is None:
             raise QueryError(f"'{prop.name}' links to a database outside the workspace.")
-        found = names.match(target, value)
+        found = names.match(target, value, fresh=True)
         if not found:
             raise QueryError(f"No item in {target.name} matches '{value}'. Use find on {target.name} to look.")
         best, score = found[0]

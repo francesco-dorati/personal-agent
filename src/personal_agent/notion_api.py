@@ -6,6 +6,7 @@ Uses the 2025-09-03 API, where a database holds one or more data sources.
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from typing import Any, Iterator
 
@@ -36,19 +37,22 @@ class NotionAPI:
         )
         self._min_interval = 1.0 / requests_per_second
         self._last_request = 0.0
+        self._throttle = threading.Lock()
         self.request_count = 0
 
     # -- core -------------------------------------------------------------
     def request(self, method: str, path: str, *, json: dict | None = None,
-                params: dict | None = None, retries: int = 4) -> dict:
+                params: dict | None = None, retries: int = 4, retry_server_errors: bool = True) -> dict:
+        """`retry_server_errors=False` for requests that must not run twice (creating a page)."""
         for attempt in range(retries + 1):
-            wait = self._min_interval - (time.monotonic() - self._last_request)
-            if wait > 0:
-                time.sleep(wait)
-            self._last_request = time.monotonic()
-            self.request_count += 1
+            with self._throttle:                       # requests may come from several threads: keep the pace
+                wait = self._min_interval - (time.monotonic() - self._last_request)
+                if wait > 0:
+                    time.sleep(wait)
+                self._last_request = time.monotonic()
+                self.request_count += 1
             resp = self._client.request(method, path, json=json, params=params)
-            if resp.status_code == 429 or resp.status_code >= 500:
+            if resp.status_code == 429 or (resp.status_code >= 500 and retry_server_errors):
                 if attempt < retries:
                     time.sleep(float(resp.headers.get("Retry-After", 2 ** attempt)))
                     continue
@@ -96,6 +100,24 @@ class NotionAPI:
 
     def data_source(self, data_source_id: str) -> dict:
         return self.request("GET", f"/data_sources/{data_source_id}")
+
+    def create_page(self, data_source_id: str, properties: dict, children: list[dict] | None = None) -> dict:
+        """Create a row, with its first 100 content blocks (append the rest with `append_blocks`).
+        A 5xx is not retried: the page may exist already, and a retry would duplicate it."""
+        body: dict[str, Any] = {"parent": {"type": "data_source_id", "data_source_id": data_source_id},
+                                "properties": properties}
+        if children:
+            body["children"] = children[:100]
+        return self.request("POST", "/pages", json=body, retry_server_errors=False)
+
+    def append_blocks(self, block_id: str, children: list[dict]) -> None:
+        """Add blocks at the end of a page or block, 100 per request. Not retried on a 5xx (could duplicate)."""
+        for i in range(0, len(children), 100):
+            self.request("PATCH", f"/blocks/{block_id}/children", json={"children": children[i:i + 100]},
+                         retry_server_errors=False)
+
+    def update_page(self, page_id: str, properties: dict) -> dict:
+        return self.request("PATCH", f"/pages/{page_id}", json={"properties": properties})
 
     def query(self, data_source_id: str, *, filter: dict | None = None,
               sorts: list | None = None, limit: int | None = None) -> list[dict]:

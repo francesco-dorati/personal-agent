@@ -23,7 +23,7 @@ import json
 import time
 from pathlib import Path
 
-from . import tools
+from . import domain, habits, proposals, tools
 from .config import REPO_ROOT
 from .guide import guide_text
 from .notion_api import NotionError
@@ -36,8 +36,8 @@ DEFAULT_FILES = [REPO_ROOT / "evals" / "cases.local.json", REPO_ROOT / "evals" /
 def _call(ws: Workspace, tool: str, args: dict) -> str:
     if tool == "guide":
         return guide_text(ws.settings)
-    fn = getattr(tools, tool, None)
-    if fn is None or tool.startswith("_") or tool == "format_row":
+    fn = getattr(tools, tool, None) or getattr(proposals, tool, None) or getattr(habits, tool, None) or getattr(domain, tool, None)
+    if fn is None or tool.startswith("_") or tool in ("format_row", "worker_mode", "approval_level"):
         raise ValueError(f"unknown tool '{tool}'")
     return fn(ws, **args)
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Keeps the HTTP MCP server running (starts at login, restarts if it dies).
+     Edit the two paths if the repo lives elsewhere, then:
+       cp scripts/com.personal-agent.mcp.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.personal-agent.mcp.plist -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.personal-agent.mcp</string>
+  <key>ProgramArguments</key>
+  <array><string>/Users/francesco/personal-assistant-workspace/personal-agent/scripts/run-http.sh</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>/Users/francesco/personal-assistant-workspace/personal-agent/logs/http.log</string>
+  <key>StandardErrorPath</key><string>/Users/francesco/personal-assistant-workspace/personal-agent/logs/http.log</string>
+</dict>
+</plist>

@@ -26,6 +26,11 @@ class Settings:
     root_page_id: str
     user_name: str = ""
     timezone: str = "UTC"
+    http_token: str = ""            # bearer token for the HTTP transport (PERSONAL_AGENT_TOKEN)
+    allowed_hosts: tuple[str, ...] = ()   # extra Host names the HTTP transport accepts (PERSONAL_AGENT_ALLOWED_HOSTS)
+    public_url: str = ""            # public HTTPS address assistants use; turns OAuth on (PERSONAL_AGENT_PUBLIC_URL)
+    owner_password: str = ""        # the password typed on the OAuth login page (PERSONAL_AGENT_OWNER_PASSWORD)
+    state_dir: Path = REPO_ROOT / ".state"   # where OAuth clients and token hashes persist (PERSONAL_AGENT_STATE_DIR)
 
 
 def load_settings(env_file: Path | None = None) -> Settings:
@@ -44,4 +49,9 @@ def load_settings(env_file: Path | None = None) -> Settings:
         root_page_id=root.replace("-", ""),
         user_name=get("USER_NAME"),
         timezone=get("USER_TIMEZONE", "UTC"),
+        http_token=get("PERSONAL_AGENT_TOKEN"),
+        allowed_hosts=tuple(h.strip() for h in get("PERSONAL_AGENT_ALLOWED_HOSTS").split(",") if h.strip()),
+        public_url=get("PERSONAL_AGENT_PUBLIC_URL").rstrip("/"),
+        owner_password=get("PERSONAL_AGENT_OWNER_PASSWORD"),
+        state_dir=Path(get("PERSONAL_AGENT_STATE_DIR") or REPO_ROOT / ".state"),
     )

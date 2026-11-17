@@ -53,6 +53,69 @@ EXAMPLES: dict[str, list[str]] = {
     "guide": [
         "agent server guide",
     ],
+    "propose": [
+        """agent server propose '{"changes": [{"operation": "CREATE", "database": "Habits Log", "properties": {"Habit": "Learn Mandarin", "Date": "now", "Value": 1}}], "reason": "test", "dry_run": true}'""",
+    ],
+    "queue": [
+        "agent server queue",
+        "agent server queue status=APPLIED limit=10",
+    ],
+    "approve": [
+        """agent server approve '{"ids": [12], "approved_by": "yes, log it"}'""",
+    ],
+    "reject": [
+        "agent server reject ids=12 reason='not today'",
+    ],
+    "apply": [
+        "agent server apply",
+        "agent server apply dry_run=true",
+        """agent server apply '{"ids": [12]}'""",
+    ],
+    "revert": [
+        "agent server revert 12",
+    ],
+    "log_habit": [
+        "agent server log_habit habit='Learn Mandarin'",
+        "agent server log_habit habit='Learn Mandarin' dry_run=true",
+    ],
+    "log_checkin": [
+        "agent server log_checkin sleep_hours=7.5 morning_energy=70 dry_run=true",
+    ],
+    "log_interaction": [
+        """agent server log_interaction '{"name": "Call with Anna", "type": "CALL", "people": ["Anna"], "commitments": [{"name": "Send the draft", "due": "2026-10-30"}], "dry_run": true}'""",
+    ],
+    "add_commitment": [
+        "agent server add_commitment name='Send the draft' due=2026-10-30 dry_run=true",
+    ],
+    "complete_commitment": [
+        "agent server complete_commitment commitment=COM-4 dry_run=true",
+    ],
+    "update_item": [
+        """agent server update_item database=Habits item=HAB-1 reviewed=true dry_run=true""",
+    ],
+    "set_inactive": [
+        "agent server set_inactive database=Habits item=HAB-3 dry_run=true",
+    ],
+    "add_person": [
+        "agent server add_person name='Jane Doe' organization=Bosch dry_run=true",
+    ],
+    "add_organization": [
+        "agent server add_organization name='ACME Robotics' category=STARTUP dry_run=true",
+    ],
+    "refresh": [
+        "agent server refresh",
+    ],
+    "habits_status": [
+        "agent server habits_status",
+    ],
+    "review": [
+        "agent server review",
+        "agent server review horizon_days=14 contact_days=90",
+        "agent server review sections=commitments,habits,checkins",
+    ],
+    "log_conversation": [
+        """agent server log_conversation '{"title": "Low energy lately", "summary": "...", "outcome": "OPEN", "dry_run": true}'""",
+    ],
 }
 
 
