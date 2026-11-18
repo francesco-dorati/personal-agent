@@ -1,0 +1,19 @@
+[project]
+name = "personal-agent-tui"
+version = "0.1.0"
+description = "Terminal app for Personal Agent: a client of the personal-agent MCP server."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "textual>=8,<9",
+]
+
+[project.scripts]
+agent-tui = "personal_agent_tui.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/personal_agent_tui"]

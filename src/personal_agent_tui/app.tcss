@@ -1,0 +1,125 @@
+/* Personal Agent · layout. Accent colours per tab live in theme.py. */
+
+Screen { background: #0e0e12; color: #f4f4f6; }
+
+#body { height: 1fr; }
+
+/* sidebar */
+#side { width: 26; background: #16161d; }
+#brand { height: 3; padding: 1 2 0 2; }
+#sidebar { height: 1fr; background: #16161d; background-tint: #000000 0%; padding: 0 1; }
+#sidebar > ListItem {
+    height: 3;
+    padding: 1 1 0 1;
+    margin-bottom: 0;
+    background: #16161d;
+}
+#sidebar > ListItem.-highlight,
+#sidebar:focus > ListItem.-highlight { color: #0b0b0f; }
+#conn { height: 2; padding: 0 2; }
+
+/* main */
+#main { width: 1fr; padding: 1 4 0 4; }
+#title { height: 2; margin-bottom: 1; }
+#switcher, .panel { height: 1fr; background: #0e0e12; }
+
+.box {
+    background: #1c1c25;
+    padding: 1 2;
+    margin: 0 1 1 0;
+    height: auto;
+}
+.section { margin-bottom: 1; }
+
+/* lists inside panels */
+.pick {
+    width: 40;
+    height: 1fr;
+    background: #0e0e12;
+    background-tint: #000000 0%;
+    padding: 0;
+}
+.pick > ListItem {
+    background: #0e0e12;
+    padding: 1 2 1 2;
+    height: auto;
+    border-left: thick #0e0e12;
+}
+.pick > ListItem.-highlight { background: #1c1c25; border-left: thick #5d5d6c; }
+#review-list:focus > ListItem.-highlight { background: #1c1c25; border-left: thick #ff4f9a; }
+#area-list:focus > ListItem.-highlight   { background: #1c1c25; border-left: thick #2bb5ff; }
+#habit-list:focus > ListItem.-highlight  { background: #1c1c25; border-left: thick #3ee07a; }
+
+.detail {
+    width: 1fr;
+    height: auto;
+    max-height: 100%;
+    margin-left: 2;
+    padding: 1 3;
+    background: #1c1c25;
+}
+
+/* home */
+#hello { height: 1; }
+#date { height: 2; }
+#tiles { height: auto; margin-bottom: 1; }
+.tile {
+    width: 1fr;
+    height: 4;
+    padding: 1 2;
+    margin-right: 1;
+    background: #1c1c25;
+}
+#home-cols { height: auto; }
+#home-cols > .box { width: 1fr; }
+
+/* hobbies */
+#hobby-grid { grid-size: 2; grid-rows: 7; grid-gutter: 1 1; height: auto; }
+.hobby { height: 100%; margin: 0; }
+
+/* people */
+#people-table {
+    height: auto;
+    max-height: 100%;
+    background: #0e0e12;
+    background-tint: #000000 0%;
+}
+#people-table > .datatable--header { background: #0e0e12; color: #a3a3b2; text-style: bold; }
+#people-table > .datatable--cursor { background: #1c1c25; }
+#people-table:focus > .datatable--cursor { background: #15d1b5; color: #0b0b0f; text-style: bold; }
+#people-table > .datatable--hover { background: #1c1c25; }
+
+/* habits */
+#habits-head { height: 2; }
+#habit-list { width: 1fr; }
+
+/* chat */
+#chat { height: 1fr; }
+.row { height: auto; width: 1fr; margin-bottom: 1; }
+.row-me { align-horizontal: right; }
+.msg { width: auto; max-width: 70%; height: auto; padding: 1 2; }
+.msg-agent { background: #1c1c25; }
+.msg-me { background: #a56bff; color: #0b0b0f; text-style: bold; }
+#chat-input {
+    background: #1c1c25;
+    border: tall #1c1c25;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+#chat-input:focus { border: tall #a56bff; }
+
+/* bottom bar */
+#hints { height: 3; padding: 1 0 0 0; background: #0e0e12; border-top: solid #2c2c38; }
+
+Toast { background: #1c1c25; }
+
+/* quiet scrollbars */
+* {
+    scrollbar-size-vertical: 1;
+    scrollbar-color: #2c2c38;
+    scrollbar-color-hover: #5d5d6c;
+    scrollbar-color-active: #a3a3b2;
+    scrollbar-background: #0e0e12;
+    scrollbar-background-hover: #0e0e12;
+    scrollbar-background-active: #0e0e12;
+}
