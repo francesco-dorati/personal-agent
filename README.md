@@ -28,7 +28,7 @@ Your name on Home comes from `PA_USER_NAME`. Use a terminal with full colour
 
 ## Files
 
-- `theme.py`: colours and the tab list (emoji, name, colour, extra keys)
+- `theme.py`: colours and the tab list (icon, name, colour, extra keys)
 - `panels.py`: one page per tab
 - `app.py`: sidebar, layout, moving between tabs
 - `app.tcss`: spacing and neutral colours

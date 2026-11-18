@@ -31,12 +31,14 @@ class NavItem(ListItem):
         if active:
             badge = f"  [b {t.color} on {C['ink']}] {self.badge} [/]" if self.badge else ""
             self.styles.background = t.color
-            text = f" {t.icon}  [b {C['ink']}]{t.label}[/]{badge}"
+            text = f" [b {C['ink']}]{t.icon}  {t.label}[/]{badge}"
         else:
-            badge = f"  [b {C['ink']} on {C['pink']}] {self.badge} [/]" if self.badge else ""
+            badge = f"  [b {C['ink']} on {C['amber']}] {self.badge} [/]" if self.badge else ""
             self.styles.background = C["side"]
-            text = f" {t.icon}  [{C['text']}]{t.label}[/]{badge}"
-        self.query_one(Static).update(text)
+            text = f" [{t.color}]{t.icon}[/]  [{C['text']}]{t.label}[/]{badge}"
+        label = self.query_one(Static)
+        label.styles.background = self.styles.background
+        label.update(text)
 
 
 class Sidebar(ListView):
@@ -61,7 +63,7 @@ class PersonalAgentApp(App):
             with Vertical(id="side"):
                 yield Static(f"[b {C['text']}]Personal Agent[/]", id="brand")
                 yield Sidebar(*[NavItem(t) for t in TABS], id="sidebar")
-                yield Static(f"[{C['yellow']}]●[/] [{C['muted']}]Sample data[/]", id="conn")
+                yield Static(f"[{C['amber']}]●[/] [{C['muted']}]Sample data[/]", id="conn")
             with Vertical(id="main"):
                 yield Static(id="title")
                 with ContentSwitcher(initial="home", id="switcher"):
@@ -75,7 +77,7 @@ class PersonalAgentApp(App):
 
     def on_mount(self) -> None:
         self.register_theme(THEME)
-        self.theme = "everyday"
+        self.theme = THEME.name
         self.switch_to("home")
         self.refresh_badges()
         self.query_one(Sidebar).focus()
@@ -93,7 +95,7 @@ class PersonalAgentApp(App):
     def switch_to(self, tab_id: str) -> None:
         tab = TAB_BY_ID[tab_id]
         self.query_one("#switcher", ContentSwitcher).current = tab_id
-        self.query_one("#title", Static).update(f"{tab.icon}  [b {tab.color}]{tab.label}[/]")
+        self.query_one("#title", Static).update(f"[b {tab.color}]{tab.icon}  {tab.label}[/]")
         self.query_one("#title").styles.border_bottom = ("heavy", tab.color)
         for item in self.query(NavItem):
             item.paint(item.tab.id == tab_id)

@@ -75,9 +75,9 @@ AREAS = [
 ]
 
 HOBBIES = [
-    ("Climbing", "2x / week", "Last session: Tue · project: blue 6b", "orange"),
-    ("Chinese", "15 min / day", "HSK 2 deck · 340 cards", "pink"),
-    ("Reading", "1 book / month", "Now: a sci-fi novel, 62%", "sky"),
+    ("Climbing", "2x / week", "Last session: Tue · project: blue 6b", "peach"),
+    ("Chinese", "15 min / day", "HSK 2 deck · 340 cards", "rose"),
+    ("Reading", "1 book / month", "Now: a sci-fi novel, 62%", "azure"),
     ("Photography", "Weekends", "Film roll #7 to develop", "teal"),
 ]
 

@@ -13,22 +13,26 @@ from . import mock
 from .theme import C, TAB_BY_ID
 
 STATUS = {
-    "PENDING": ("Waiting for you", C["yellow"]),
-    "APPROVED": ("Approved", C["green"]),
-    "REJECTED": ("Declined", C["red"]),
+    "PENDING": ("waiting for you", C["amber"]),
+    "APPROVED": ("approved", C["green"]),
+    "REJECTED": ("declined", C["red"]),
 }
-VERB = {"CREATE": "New", "UPDATE": "Update", "SET-INACTIVE": "Archive"}
+VERB = {"CREATE": "new", "UPDATE": "update", "SET-INACTIVE": "archive"}
 NOUN = {"Commitments": "to-do", "Areas": "work note", "Interactions": "meeting",
         "Goals": "goal", "People": "contact", "Habits": "habit"}
-HOBBY_ICON = {"Climbing": "🧗", "Chinese": "📝", "Reading": "📚", "Photography": "📷"}
+HOBBY_ICON = {"Climbing": "▲", "Chinese": "✎", "Reading": "≡", "Photography": "◉"}
 
 
 def kind(q: dict) -> str:
-    return f"{VERB.get(q['op'], q['op'].title())} {NOUN.get(q['db'], q['db'].lower())}"
+    return f"{VERB.get(q['op'], q['op'].lower())} {NOUN.get(q['db'], q['db'].lower())}"
 
 
-def section(title: str, color: str) -> Static:
-    return Static(f"[b {color}]{title}[/]", classes="section")
+def card(title: str, body: str, color: str, *, classes: str = "") -> Static:
+    """A rounded box with its title in the top border, like the first sketch."""
+    w = Static(body, classes=f"card {classes}".strip())
+    w.border_title = f"[b {color}] {title} [/]"
+    w.styles.border = ("round", color)
+    return w
 
 
 def dots(days: list[int], color: str) -> str:
@@ -51,10 +55,6 @@ class Panel:
         return self  # type: ignore[return-value]
 
 
-class Pick(ListView):
-    """A list inside a panel (its panel stops its events before they reach the app)."""
-
-
 # ── home ────────────────────────────────────────────────────────────────────
 
 class HomePanel(VerticalScroll, Panel):
@@ -75,40 +75,40 @@ class HomePanel(VerticalScroll, Panel):
         due = sum(1 for _, w, done in mock.COMMITMENTS if w == "today" and not done)
         best = max(mock.HABITS, key=lambda h: streak(h[1]))
         with Horizontal(id="tiles"):
-            yield Static(f"[b {C['pink']}]{pending}[/]\n[{C['muted']}]to review[/]", classes="tile")
-            yield Static(f"[b {C['yellow']}]{due}[/]\n[{C['muted']}]due today[/]", classes="tile")
-            yield Static(f"[b {C['green']}]{streak(best[1])} days[/]\n[{C['muted']}]{best[0]} streak[/]",
-                         classes="tile")
+            yield card("To review", f"[b {C['amber']}]{pending}[/] [{C['muted']}]waiting[/]", C["amber"], classes="tile")
+            yield card("Due today", f"[b {C['peach']}]{due}[/] [{C['muted']}]to-do[/]", C["peach"], classes="tile")
+            yield card("Best streak", f"[b {C['green']}]{streak(best[1])} days[/] [{C['muted']}]{best[0]}[/]",
+                       C["green"], classes="tile")
 
         with Horizontal(id="home-cols"):
-            with Vertical(classes="box"):
-                yield section("Today", C["blue"])
-                yield Static("\n".join(
-                    f"[{C['muted']}]{t}[/]   [{TAB_BY_ID[k].color}]●[/]  {what}"
-                    for t, what, k in mock.AGENDA))
-            with Vertical(classes="box"):
-                yield section("To do", C["orange"])
-                yield Static("\n".join(
-                    (f"[{C['green']}]✓[/]  [{C['faint']}]{n}[/]" if done
-                     else f"[{C['muted']}]○[/]  {n}  [{C['muted']}]· {w}[/]")
-                    for n, w, done in mock.COMMITMENTS))
+            yield card("Today", "\n".join(
+                f"[{C['muted']}]{t}[/]  [{TAB_BY_ID[k].color}]●[/] {what}" for t, what, k in mock.AGENDA),
+                C["azure"])
+            yield card("To do", "\n".join(
+                (f"[{C['green']}]●[/] [{C['faint']}]{n}[/]" if done
+                 else f"[{C['faint']}]○[/] {n} [{C['muted']}]· {w}[/]")
+                for n, w, done in mock.COMMITMENTS), C["peach"])
 
-        with Vertical(classes="box"):
-            yield section("Habits · last 2 weeks", C["green"])
-            yield Static("\n".join(
-                f"{name.capitalize():<16} {dots(days, C['green'])}" for name, days in mock.HABITS))
+        yield card("Habits · last 2 weeks", "\n".join(
+            f"{name.capitalize():<16} {dots(days, C['green'])}" for name, days in mock.HABITS), C["green"])
 
         last = next(m for who, m in reversed(mock.AGENT_CHAT) if who == "agent")
-        with Vertical(classes="box"):
-            yield section("💬  Your assistant", C["purple"])
-            yield Static(last)
+        yield card("Assistant", f"[{C['orange']}]❯[/] {last}", C["orange"])
 
 
 # ── to review ───────────────────────────────────────────────────────────────
 
 def review_label(q: dict) -> str:
     _, color = STATUS[q["status"]]
-    return f"[{color}]●[/]  [b]{q['title']}[/]\n    [{C['muted']}]{kind(q)}[/]"
+    return (f"[{color}]●[/] [b]{q['title']}[/]\n"
+            f"  [{C['muted']}]{kind(q)}[/] [{C['faint']}]· {q['id']}[/]")
+
+
+def fields(props: dict[str, str]) -> str:
+    width = max((len(k) for k in props), default=0)
+    return "\n".join(
+        f"  [{C['key']}]{k.lower():<{width}}[/] [{C['faint']}]=[/] [{C['str']}]\"{v}\"[/]"
+        for k, v in props.items())
 
 
 class ReviewPanel(Horizontal, Panel):
@@ -118,9 +118,9 @@ class ReviewPanel(Horizontal, Panel):
     ]
 
     def compose(self) -> ComposeResult:
-        yield Pick(*[ListItem(Static(review_label(q))) for q in mock.QUEUE],
-                   id="review-list", classes="pick")
-        yield Static(id="review-detail", classes="detail")
+        yield ListView(*[ListItem(Static(review_label(q))) for q in mock.QUEUE],
+                       id="review-list", classes="pick")
+        yield card("", "", C["amber"], classes="detail")
 
     def on_mount(self) -> None:
         self.show(0)
@@ -133,20 +133,20 @@ class ReviewPanel(Horizontal, Panel):
             return
         q = mock.QUEUE[i]
         label, color = STATUS[q["status"]]
-        width = max(len(k) for k in q["props"])
-        fields = "\n".join(f"[{C['muted']}]{k:<{width}}[/]   {v}" for k, v in q["props"].items())
-        note = q["body"].replace("- [ ]", "○") if q["body"] else f"[{C['faint']}]No notes[/]"
-        who = "You said this" if q["source"] == "me" else "Suggested by your assistant"
+        who = "you said this" if q["source"] == "me" else "suggested by your assistant"
+        notes = "\n".join(f"  {line.replace('- [ ]', '○')}" for line in q["body"].splitlines()) \
+            or f"  [{C['faint']}]no notes[/]"
         buttons = ""
         if q["status"] == "PENDING":
-            buttons = (f"\n\n[b {C['ink']} on {C['green']}]  A  Approve  [/]   "
+            buttons = (f"\n\n  [b {C['ink']} on {C['green']}]  A  Approve  [/]   "
                        f"[b {C['ink']} on {C['red']}]  X  Decline  [/]")
-        self.query_one("#review-detail", Static).update(
-            f"[{C['pink']}]{kind(q)}[/]\n"
+        d = self.query_one(".detail", Static)
+        d.border_title = f"[b {C['amber']}] {q['id']} [/][{C['muted']}]{kind(q)} → {q['db']} [/]"
+        d.update(
             f"[b {C['text']}]{q['title']}[/]\n"
-            f"[{color}]● {label}[/]  [{C['muted']}]· {who}[/]\n\n"
-            f"{fields}\n\n"
-            f"[b {C['muted']}]Notes[/]\n{note}"
+            f"[{color}]● {label}[/] [{C['muted']}]· {who}[/]\n\n"
+            f"[{C['faint']}]# fields[/]\n{fields(q['props'])}\n\n"
+            f"[{C['faint']}]# notes[/]\n[{C['text']}]{notes}[/]"
             f"{buttons}"
         )
 
@@ -165,7 +165,7 @@ class ReviewPanel(Horizontal, Panel):
         q["status"] = status
         lv.highlighted_child.query_one(Static).update(review_label(q))
         self.show(lv.index)
-        self.app.notify(f"{q['title']}", title=STATUS[status][0],
+        self.app.notify(q["title"], title=STATUS[status][0].capitalize(),
                         severity="information" if status == "APPROVED" else "warning")
         self.app.refresh_badges()
 
@@ -176,11 +176,11 @@ class WorkPanel(Horizontal, Panel):
     def compose(self) -> ComposeResult:
         items = []
         for a in mock.AREAS:
-            dot = C["green"] if a["status"] == "active" else C["yellow"]
+            dot = C["green"] if a["status"] == "active" else C["amber"]
             state = "Active" if a["status"] == "active" else "Planning"
             items.append(ListItem(Static(f"[b]{a['name']}[/]\n[{dot}]●[/] [{C['muted']}]{state}[/]")))
-        yield Pick(*items, id="area-list", classes="pick")
-        yield Static(id="area-detail", classes="detail")
+        yield ListView(*items, id="area-list", classes="pick")
+        yield card("", "", C["teal"], classes="detail")
 
     def on_mount(self) -> None:
         self.show(0)
@@ -192,12 +192,14 @@ class WorkPanel(Horizontal, Panel):
         if i is None:
             return
         a = mock.AREAS[i]
-        log = "\n".join(f"[{C['muted']}]Week {w[1:]}[/]   {t}" for w, t in a["log"])
-        todo = "\n".join(f"[{C['muted']}]○[/]  {t}" for t in a["open"])
-        self.query_one("#area-detail", Static).update(
-            f"[b {C['text']}]{a['name']}[/]\n[{C['muted']}]{a['context']}[/]\n\n"
-            f"[b {C['sky']}]Recent weeks[/]\n{log}\n\n"
-            f"[b {C['orange']}]Still to do[/]\n{todo}"
+        log = "\n".join(f"[{C['muted']}]Week {w[1:]}[/]  {t}" for w, t in a["log"])
+        todo = "\n".join(f"[{C['faint']}]○[/] {t}" for t in a["open"])
+        d = self.query_one(".detail", Static)
+        d.border_title = f"[b {C['teal']}] {a['name']} [/]"
+        d.update(
+            f"[{C['muted']}]{a['context']}[/]\n\n"
+            f"[b {C['azure']}]Recent weeks[/]\n{log}\n\n"
+            f"[b {C['peach']}]Still to do[/]\n{todo}"
         )
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
@@ -216,24 +218,26 @@ class HobbiesPanel(VerticalScroll, Panel):
     def compose(self) -> ComposeResult:
         with Grid(id="hobby-grid"):
             for name, cadence, note, color in mock.HOBBIES:
-                yield Static(
-                    f"{HOBBY_ICON.get(name, '✨')}  [b {C['text']}]{name}[/]\n"
-                    f"[b {C[color]}]{cadence}[/]\n[{C['muted']}]{note}[/]",
-                    classes="box hobby")
+                yield card(f"{HOBBY_ICON.get(name, '✦')} {name}",
+                           f"[b {C[color]}]{cadence}[/]\n[{C['muted']}]{note}[/]", C[color], classes="hobby")
 
 
 # ── people ──────────────────────────────────────────────────────────────────
 
+def cap(s: str) -> str:
+    return s[:1].upper() + s[1:]
+
+
 class PeoplePanel(Vertical, Panel):
     def compose(self) -> ComposeResult:
-        yield DataTable(id="people-table", cursor_type="row", show_cursor=True)
+        yield DataTable(id="people-table", cursor_type="row")
 
     def on_mount(self) -> None:
         t = self.query_one(DataTable)
         t.add_columns("Name", "Who", "Last talked", "Next")
         for name, rel, last, nxt in mock.PEOPLE:
-            t.add_row(f"[b]{name}[/]", rel[:1].upper() + rel[1:], last[:1].upper() + last[1:],
-                      f"[{C['teal']}]{nxt[:1].upper() + nxt[1:]}[/]" if nxt != "—" else f"[{C['faint']}]—[/]")
+            t.add_row(f"[b]{name}[/]", cap(rel), cap(last),
+                      f"[{C['peach']}]{cap(nxt)}[/]" if nxt != "—" else f"[{C['faint']}]—[/]")
 
     def focus_target(self) -> Widget:
         return self.query_one(DataTable)
@@ -243,9 +247,10 @@ class PeoplePanel(Vertical, Panel):
 
 def habit_label(name: str, days: list[int]) -> str:
     s = streak(days)
-    tail = f"[b {C['orange']}]🔥 {s} day{'s' if s != 1 else ''}[/]" if s else f"[{C['faint']}]No streak[/]"
-    return (f"[b]{name.capitalize():<16}[/]  {dots(days, C['green'])}   "
-            f"[{C['muted']}]{sum(days)} of 14[/]   {tail}")
+    tail = (f"[b {C['peach']}]{s} day{'s' if s != 1 else ''} in a row[/]" if s
+            else f"[{C['faint']}]no streak[/]")
+    return (f"[b]{name.capitalize():<16}[/] {dots(days, C['green'])}   "
+            f"[{C['muted']}]{sum(days):>2} of 14[/]   {tail}")
 
 
 class HabitsPanel(Vertical, Panel):
@@ -253,8 +258,8 @@ class HabitsPanel(Vertical, Panel):
 
     def compose(self) -> ComposeResult:
         yield Static(f"[{C['muted']}]Last two weeks. Today is the dot on the right.[/]", id="habits-head")
-        yield Pick(*[ListItem(Static(habit_label(n, d))) for n, d in mock.HABITS],
-                   id="habit-list", classes="pick")
+        yield ListView(*[ListItem(Static(habit_label(n, d))) for n, d in mock.HABITS],
+                       id="habit-list", classes="pick")
 
     def focus_target(self) -> Widget:
         return self.query_one("#habit-list")
@@ -288,7 +293,8 @@ class ChatPanel(Vertical, Panel):
     @staticmethod
     def bubble(who: str, text: str) -> Horizontal:
         if who == "agent":
-            return Horizontal(Static(text, classes="msg msg-agent"), classes="row row-agent")
+            return Horizontal(Static(f"[{C['orange']}]❯[/] {text}", classes="msg msg-agent"),
+                              classes="row row-agent")
         return Horizontal(Static(text, classes="msg msg-me"), classes="row row-me")
 
     def focus_target(self) -> Widget:
