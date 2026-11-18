@@ -48,46 +48,27 @@ THEME = Theme(
 )
 
 
-# Two icon sets. NERD: flat pictograms from a Nerd Font (house, inbox, ...).
-# BASIC: plain symbols that every font can draw. Which one is used is decided
-# once per machine (see iconcheck.py), can be forced with PA_ICONS=nerd|basic,
-# and switched any time with the I key.
-NERD = {
-    "home": "\uf015",         # house
-    "review": "\uf01c",       # inbox
-    "work": "\uf0b1",         # briefcase
-    "hobbies": "\U000f03d8",  # palette
-    "people": "\uf0c0",       # users
-    "habits": "\U000f0e66",   # sprout
-    "chat": "\uf086",         # speech bubbles
-    "calendar": "\uf073",
-    "todo": "\uf046",         # checked box
-    "assistant": "\uf075",    # speech bubble
-    "Climbing": "\U000f0d7f", # hiking
-    "Chinese": "\uf1ab",      # language
-    "Reading": "\uf02d",      # book
-    "Photography": "\uf030",  # camera
+# Icons are drawn with block characters (▗▟█▙▖...), which every monospace
+# font has, so they need no special font. BIG: 5 cells x 3 lines, for the
+# sidebar and page titles. SMALL: one-character symbols for card titles.
+BIG = {
+    "home": [' ▄█▄ ', '▜███▛', '▐█ █▌'],
+    "review": ['   ▗█', '█▖▗█▘', '▝██▘ '],
+    "work": [' ▐▀▌ ', '██▀██', '█████'],
+    "hobbies": ['▟█▄█▙', '▜███▛', ' ▝█▘ '],
+    "people": [' ▐█▌ ', ' ▄▄▄ ', '▐███▌'],
+    "habits": ['▜▙ ▟▛', ' ▝█▘ ', ' ▄█▄ '],
+    "chat": ['▟███▙', '▜███▛', '▗▛   '],
 }
-BASIC = {
-    "home": "⌂", "review": "✉", "work": "⚒", "hobbies": "✿", "people": "☺",
+SMALL = {
+    "home": "⌂", "review": "✓", "work": "⚒", "hobbies": "♥", "people": "☺",
     "habits": "↻", "chat": "❯", "calendar": "◷", "todo": "☑", "assistant": "❯",
     "Climbing": "▲", "Chinese": "✎", "Reading": "☰", "Photography": "◉",
 }
-SETS = {"nerd": NERD, "basic": BASIC}
-_mode = "basic"
-
-
-def icon_mode() -> str:
-    return _mode
-
-
-def set_icon_mode(mode: str) -> None:
-    global _mode
-    _mode = mode if mode in SETS else "basic"
 
 
 def icon(name: str) -> str:
-    return SETS[_mode].get(name, "•")
+    return SMALL.get(name, "•")
 
 
 @dataclass(frozen=True)
@@ -98,8 +79,12 @@ class Tab:
     hint: str   # extra keys shown at the bottom while this tab is open
 
     @property
-    def icon(self) -> str:   # one flat, single-width pictogram, drawn in the tab colour
+    def icon(self) -> str:
         return icon(self.id)
+
+    @property
+    def big(self) -> list[str]:   # three lines, drawn in the tab colour
+        return BIG[self.id]
 
 
 TABS: list[Tab] = [

@@ -13,15 +13,11 @@ cd personal-agent-tui
 uv run agent-tui
 ```
 
-Your name on Home comes from `PA_USER_NAME`. Use a terminal with full colour
+Your name on Home is your Mac account's first name (or `PA_USER_NAME`). Use a terminal with full colour
 (iTerm2, Ghostty, WezTerm, Kitty); macOS Terminal shows washed-out colours.
 
-**Icons work in any terminal.** On first launch the app shows three small
-pictures and asks if you can see them. Yes: it uses flat picture icons (from a
-Nerd Font, which some terminals such as Ghostty and WezTerm have built in). No:
-it uses simple symbols every font can draw. The answer is saved in
-`~/.config/personal-agent-tui/settings.json`; press **I** to switch any time,
-or force it with `PA_ICONS=nerd` / `PA_ICONS=basic`.
+**Icons work in any terminal.** They are drawn with block characters
+(`▗▟█▙▖`), which every monospace font has, so no special font is needed.
 
 **Where the arrows go.** When the sidebar has the arrows, the open tab is a
 bright coloured block and the bottom bar says **Tabs**. Press → and the sidebar
@@ -36,14 +32,24 @@ names the page you are in. ← or Esc takes you back.
 | 1 – 7      | Jump to a tab                        |
 | A / X      | To review: approve / decline         |
 | Space      | Habits: done today                   |
-| I          | Switch picture icons / simple symbols |
 | Q          | Quit                                 |
+
+## Use it like an app (macOS)
+
+```
+zsh macos/make-app.sh
+```
+
+This builds **Personal Agent.app** in `~/Applications` with its own icon. Drag
+it into the Dock to pin it, or open it from Spotlight/Raycast by typing
+"Personal Agent". Clicking it opens a window of your terminal (Ghostty if
+installed, else iTerm2, else Terminal) running the app. Re-run the script if you
+move this folder.
 
 ## Files
 
-- `theme.py`: colours, the two icon sets, the tab list
-- `iconcheck.py`: the first-launch "can you see these?" check
-- `settings.py`: the small per-machine settings file
+- `theme.py`: colours, the block-character icons, the tab list
+- `macos/`: the app icon and the script that builds Personal Agent.app
 - `panels.py`: one page per tab
 - `app.py`: sidebar, layout, moving between tabs
 - `app.tcss`: spacing and neutral colours

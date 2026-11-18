@@ -5,20 +5,42 @@ Arrows move, → opens, ← or Esc goes back, 1-7 jump to a tab, Q quits.
 from __future__ import annotations
 
 import os
+import pwd
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import ContentSwitcher, ListItem, ListView, Static
 
-from . import mock, settings
-from .iconcheck import IconCheckApp
+from . import mock
 from .panels import PANELS, HomePanel
-from .theme import C, SETS, TABS, TAB_BY_ID, THEME, Tab, icon_mode, set_icon_mode
+from .theme import C, TABS, TAB_BY_ID, THEME, Tab
 
 
 def user_name() -> str:
-    return os.environ.get("PA_USER_NAME") or os.environ.get("USER_NAME") or "there"
+    """PA_USER_NAME, else the first name of the account owner."""
+    name = os.environ.get("PA_USER_NAME") or os.environ.get("USER_NAME")
+    if not name:
+        try:
+            name = pwd.getpwuid(os.getuid()).pw_gecos.split(",")[0].split(" ")[0]
+        except (KeyError, IndexError):
+            name = ""
+    return name or "there"
+
+
+def subtitle(tab_id: str) -> str:
+    """One short line under each tab name (from mock data for now)."""
+    pending = sum(1 for q in mock.QUEUE if q["status"] == "PENDING")
+    done_today = sum(1 for _, days in mock.HABITS if days[-1])
+    return {
+        "home": "Your day",
+        "review": f"{pending} waiting" if pending else "All done",
+        "work": f"{len(mock.AREAS)} areas",
+        "hobbies": f"{len(mock.HOBBIES)} hobbies",
+        "people": f"{len(mock.PEOPLE)} people",
+        "habits": f"{done_today} of {len(mock.HABITS)} today",
+        "chat": "Ask anything",
+    }[tab_id]
 
 
 class NavItem(ListItem):
@@ -30,19 +52,23 @@ class NavItem(ListItem):
     def paint(self, active: bool, lit: bool) -> None:
         """active: the open tab. lit: the sidebar has the arrow keys."""
         t = self.tab
-        n = f" {self.badge} " if self.badge else ""
         if active and lit:          # bright fill: arrows move here
-            bg = t.color
-            text = f" [b {C['ink']}]{t.icon}  {t.label}[/]" + (f"  [b {t.color} on {C['ink']}]{n}[/]" if n else "")
+            bg, ico, name, sub = t.color, C["ink"], C["ink"], C["ink"]
         elif active:                # open tab, but the page has the arrows
-            bg = C["box"]
-            text = f"[{t.color}]▌[/][b {t.color}]{t.icon}  {t.label}[/]" + (f"  [b {C['ink']} on {C['amber']}]{n}[/]" if n else "")
+            bg, ico, name, sub = C["box"], t.color, t.color, C["muted"]
         elif lit:
-            bg = C["side"]
-            text = f" [{t.color}]{t.icon}[/]  [{C['text']}]{t.label}[/]" + (f"  [b {C['ink']} on {C['amber']}]{n}[/]" if n else "")
+            bg, ico, name, sub = C["side"], t.color, C["text"], C["muted"]
         else:                       # dimmed while the page has the arrows
-            bg = C["side"]
-            text = f" [{C['faint']}]{t.icon}  {t.label}[/]" + (f"  [{C['amber']}]{n}[/]" if n else "")
+            bg, ico, name, sub = C["side"], C["faint"], C["faint"], C["faint"]
+        badge = ""
+        if self.badge:
+            badge = (f"  [b {t.color} on {C['ink']}] {self.badge} [/]" if active and lit
+                     else f"  [b {C['ink']} on {C['amber']}] {self.badge} [/]" if lit or active
+                     else f"  [{C['amber']}]{self.badge}[/]")
+        a, b, c = t.big
+        text = (f"[{ico}]{a}[/]   [b {name}]{t.label}[/]{badge}\n"
+                f"[{ico}]{b}[/]   [{sub}]{subtitle(t.id)}[/]\n"
+                f"[{ico}]{c}[/]")
         self.styles.background = bg
         label = self.query_one(Static)
         label.styles.background = bg
@@ -61,7 +87,6 @@ class PersonalAgentApp(App):
     TITLE = "Personal Agent"
     BINDINGS = [
         Binding("q", "quit", "Quit"),
-        Binding("i", "toggle_icons", "Icons", show=False),
         Binding("escape", "focus_sidebar", "Back", show=False),
         Binding("left", "focus_sidebar", "Back", show=False),
         *[Binding(str(i + 1), f"jump('{t.id}')", t.label, show=False) for i, t in enumerate(TABS)],
@@ -104,7 +129,10 @@ class PersonalAgentApp(App):
         lit = self.sidebar_lit()
         for item in self.query(NavItem):
             item.paint(item.tab.id == tab.id, lit)
-        self.query_one("#title", Static).update(f"[b {tab.color}]{tab.icon}  {tab.label}[/]")
+        a, b, c = tab.big
+        self.query_one("#title", Static).update(
+            f"[{tab.color}]{a}[/]\n[{tab.color}]{b}[/]   [b {tab.color}]{tab.label}[/]"
+            f"   [{C['muted']}]{subtitle(tab.id)}[/]\n[{tab.color}]{c}[/]")
         self.query_one("#title").styles.border_bottom = ("heavy", tab.color)
         self.paint_hints(tab, lit)
 
@@ -123,7 +151,7 @@ class PersonalAgentApp(App):
 
         if lit:
             mode = f"[b {C['ink']} on {tab.color}]  Tabs  [/]"
-            parts = [key("↑↓", "Switch tab"), key("→", "Open"), key("1-7", "Jump"), key("I", "Icons")]
+            parts = [key("↑↓", "Switch tab"), key("→", "Open"), key("1-7", "Jump")]
         else:
             mode = f"[b {C['ink']} on {tab.color}]  {tab.label}  [/]"
             move = {"home": "Scroll", "hobbies": "Scroll", "chat": ""}.get(tab.id, "Move")
@@ -150,38 +178,12 @@ class PersonalAgentApp(App):
     def action_focus_sidebar(self) -> None:
         self.query_one(Sidebar).focus()
 
-    async def action_toggle_icons(self) -> None:
-        """Switch between picture icons and simple symbols, and remember it."""
-        tab, on_page = self.current(), not self.sidebar_lit()
-        set_icon_mode("basic" if icon_mode() == "nerd" else "nerd")
-        settings.save(icons=icon_mode())
-        await self.recompose()
-        self.query_one("#switcher", ContentSwitcher).current = tab
-        self.query_one(Sidebar).index = [t.id for t in TABS].index(tab)
-        (self.action_focus_content if on_page else self.action_focus_sidebar)()
-        self.refresh_badges()
-        self.notify("Picture icons" if icon_mode() == "nerd" else "Simple symbols", title="Icons")
-
     def action_jump(self, tab_id: str) -> None:
         self.query_one(Sidebar).index = [t.id for t in TABS].index(tab_id)
         self.switch_to(tab_id)
 
 
-def choose_icons() -> str:
-    """PA_ICONS wins, then the saved answer, else ask once and save it."""
-    forced = os.environ.get("PA_ICONS", "").lower()
-    if forced in SETS:
-        return forced
-    saved = settings.load().get("icons")
-    if saved in SETS:
-        return saved
-    answer = IconCheckApp().run() or "basic"
-    settings.save(icons=answer)
-    return answer
-
-
 def main() -> None:
-    set_icon_mode(choose_icons())
     PersonalAgentApp().run()
 
 
