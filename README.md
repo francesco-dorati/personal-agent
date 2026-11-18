@@ -16,9 +16,23 @@ uv run agent-tui
 Your name on Home comes from `PA_USER_NAME`. Use a terminal with full colour
 (iTerm2, Ghostty, WezTerm, Kitty); macOS Terminal shows washed-out colours.
 
+The icons come from a **Nerd Font**. Install one and pick it in your terminal's
+font settings:
+
+```
+brew install --cask font-jetbrains-mono-nerd-font
+```
+
+No Nerd Font? Run with `PA_ICONS=basic` for plain symbols instead of boxes.
+
+**Where the arrows go.** When the sidebar has the arrows, the open tab is a
+bright coloured block and the bottom bar says **Tabs**. Press → and the sidebar
+dims, the page's selected row lights up with a coloured bar, and the bottom bar
+names the page you are in. ← or Esc takes you back.
+
 | Key        | What it does                         |
 |------------|--------------------------------------|
-| ↑ ↓        | Move between tabs (the page follows) |
+| ↑ ↓        | Switch tab, or move inside a page    |
 | → or Enter | Go into the page                     |
 | ← or Esc   | Back to the tabs                     |
 | 1 – 7      | Jump to a tab                        |
@@ -28,7 +42,7 @@ Your name on Home comes from `PA_USER_NAME`. Use a terminal with full colour
 
 ## Files
 
-- `theme.py`: colours and the tab list (icon, name, colour, extra keys)
+- `theme.py`: colours, icons (Nerd Font + basic fallback), the tab list
 - `panels.py`: one page per tab
 - `app.py`: sidebar, layout, moving between tabs
 - `app.tcss`: spacing and neutral colours

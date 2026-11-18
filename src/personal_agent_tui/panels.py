@@ -10,7 +10,7 @@ from textual.widget import Widget
 from textual.widgets import DataTable, Input, ListItem, ListView, Static
 
 from . import mock
-from .theme import C, TAB_BY_ID
+from .theme import C, TAB_BY_ID, icon
 
 STATUS = {
     "PENDING": ("waiting for you", C["amber"]),
@@ -20,7 +20,6 @@ STATUS = {
 VERB = {"CREATE": "new", "UPDATE": "update", "SET-INACTIVE": "archive"}
 NOUN = {"Commitments": "to-do", "Areas": "work note", "Interactions": "meeting",
         "Goals": "goal", "People": "contact", "Habits": "habit"}
-HOBBY_ICON = {"Climbing": "▲", "Chinese": "✎", "Reading": "≡", "Photography": "◉"}
 
 
 def kind(q: dict) -> str:
@@ -75,25 +74,25 @@ class HomePanel(VerticalScroll, Panel):
         due = sum(1 for _, w, done in mock.COMMITMENTS if w == "today" and not done)
         best = max(mock.HABITS, key=lambda h: streak(h[1]))
         with Horizontal(id="tiles"):
-            yield card("To review", f"[b {C['amber']}]{pending}[/] [{C['muted']}]waiting[/]", C["amber"], classes="tile")
-            yield card("Due today", f"[b {C['peach']}]{due}[/] [{C['muted']}]to-do[/]", C["peach"], classes="tile")
-            yield card("Best streak", f"[b {C['green']}]{streak(best[1])} days[/] [{C['muted']}]{best[0]}[/]",
+            yield card(f"{icon('review')}  To review", f"[b {C['amber']}]{pending}[/] [{C['muted']}]waiting[/]", C["amber"], classes="tile")
+            yield card(f"{icon('todo')}  Due today", f"[b {C['peach']}]{due}[/] [{C['muted']}]to-do[/]", C["peach"], classes="tile")
+            yield card(f"{icon('habits')}  Best streak", f"[b {C['green']}]{streak(best[1])} days[/] [{C['muted']}]{best[0]}[/]",
                        C["green"], classes="tile")
 
         with Horizontal(id="home-cols"):
-            yield card("Today", "\n".join(
+            yield card(f"{icon('calendar')}  Today", "\n".join(
                 f"[{C['muted']}]{t}[/]  [{TAB_BY_ID[k].color}]●[/] {what}" for t, what, k in mock.AGENDA),
                 C["azure"])
-            yield card("To do", "\n".join(
+            yield card(f"{icon('todo')}  To do", "\n".join(
                 (f"[{C['green']}]●[/] [{C['faint']}]{n}[/]" if done
                  else f"[{C['faint']}]○[/] {n} [{C['muted']}]· {w}[/]")
                 for n, w, done in mock.COMMITMENTS), C["peach"])
 
-        yield card("Habits · last 2 weeks", "\n".join(
+        yield card(f"{icon('habits')}  Habits · last 2 weeks", "\n".join(
             f"{name.capitalize():<16} {dots(days, C['green'])}" for name, days in mock.HABITS), C["green"])
 
         last = next(m for who, m in reversed(mock.AGENT_CHAT) if who == "agent")
-        yield card("Assistant", f"[{C['orange']}]❯[/] {last}", C["orange"])
+        yield card(f"{icon('assistant')}  Assistant", f"[{C['orange']}]❯[/] {last}", C["orange"])
 
 
 # ── to review ───────────────────────────────────────────────────────────────
@@ -218,7 +217,7 @@ class HobbiesPanel(VerticalScroll, Panel):
     def compose(self) -> ComposeResult:
         with Grid(id="hobby-grid"):
             for name, cadence, note, color in mock.HOBBIES:
-                yield card(f"{HOBBY_ICON.get(name, '✦')} {name}",
+                yield card(f"{icon(name)}  {name}",
                            f"[b {C[color]}]{cadence}[/]\n[{C['muted']}]{note}[/]", C[color], classes="hobby")
 
 

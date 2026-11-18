@@ -26,18 +26,25 @@ class NavItem(ListItem):
         self.tab = tab
         self.badge = 0
 
-    def paint(self, active: bool) -> None:
+    def paint(self, active: bool, lit: bool) -> None:
+        """active: the open tab. lit: the sidebar has the arrow keys."""
         t = self.tab
-        if active:
-            badge = f"  [b {t.color} on {C['ink']}] {self.badge} [/]" if self.badge else ""
-            self.styles.background = t.color
-            text = f" [b {C['ink']}]{t.icon}  {t.label}[/]{badge}"
-        else:
-            badge = f"  [b {C['ink']} on {C['amber']}] {self.badge} [/]" if self.badge else ""
-            self.styles.background = C["side"]
-            text = f" [{t.color}]{t.icon}[/]  [{C['text']}]{t.label}[/]{badge}"
+        n = f" {self.badge} " if self.badge else ""
+        if active and lit:          # bright fill: arrows move here
+            bg = t.color
+            text = f" [b {C['ink']}]{t.icon}  {t.label}[/]" + (f"  [b {t.color} on {C['ink']}]{n}[/]" if n else "")
+        elif active:                # open tab, but the page has the arrows
+            bg = C["box"]
+            text = f"[{t.color}]▌[/][b {t.color}]{t.icon}  {t.label}[/]" + (f"  [b {C['ink']} on {C['amber']}]{n}[/]" if n else "")
+        elif lit:
+            bg = C["side"]
+            text = f" [{t.color}]{t.icon}[/]  [{C['text']}]{t.label}[/]" + (f"  [b {C['ink']} on {C['amber']}]{n}[/]" if n else "")
+        else:                       # dimmed while the page has the arrows
+            bg = C["side"]
+            text = f" [{C['faint']}]{t.icon}  {t.label}[/]" + (f"  [{C['amber']}]{n}[/]" if n else "")
+        self.styles.background = bg
         label = self.query_one(Static)
-        label.styles.background = self.styles.background
+        label.styles.background = bg
         label.update(text)
 
 
@@ -78,39 +85,53 @@ class PersonalAgentApp(App):
     def on_mount(self) -> None:
         self.register_theme(THEME)
         self.theme = THEME.name
-        self.switch_to("home")
-        self.refresh_badges()
         self.query_one(Sidebar).focus()
+        self.watch(self.screen, "focused", lambda _: self.repaint(), init=False)
+        self.refresh_badges()
 
     # helpers
     def current(self) -> str:
         return self.query_one("#switcher", ContentSwitcher).current or "home"
 
+    def sidebar_lit(self) -> bool:
+        return isinstance(self.focused, Sidebar)
+
+    def repaint(self) -> None:
+        """Redraw everything that shows where the arrow keys go."""
+        tab = TAB_BY_ID[self.current()]
+        lit = self.sidebar_lit()
+        for item in self.query(NavItem):
+            item.paint(item.tab.id == tab.id, lit)
+        self.query_one("#title", Static).update(f"[b {tab.color}]{tab.icon}  {tab.label}[/]")
+        self.query_one("#title").styles.border_bottom = ("heavy", tab.color)
+        self.paint_hints(tab, lit)
+
     def refresh_badges(self) -> None:
         self.query_one("#nav-review", NavItem).badge = sum(
             1 for q in mock.QUEUE if q["status"] == "PENDING")
-        for item in self.query(NavItem):
-            item.paint(item.tab.id == self.current())
+        self.repaint()
 
     def switch_to(self, tab_id: str) -> None:
-        tab = TAB_BY_ID[tab_id]
         self.query_one("#switcher", ContentSwitcher).current = tab_id
-        self.query_one("#title", Static).update(f"[b {tab.color}]{tab.icon}  {tab.label}[/]")
-        self.query_one("#title").styles.border_bottom = ("heavy", tab.color)
-        for item in self.query(NavItem):
-            item.paint(item.tab.id == tab_id)
-        self.paint_hints(tab)
+        self.repaint()
 
-    def paint_hints(self, tab: Tab) -> None:
+    def paint_hints(self, tab: Tab, lit: bool) -> None:
         def key(k: str, what: str) -> str:
             return f"[b {C['text']} on {C['line']}] {k} [/] [{C['muted']}]{what}[/]"
 
-        parts = [key("↑↓", "Move"), key("→", "Open"), key("←", "Back")]
-        for chunk in filter(None, tab.hint.split("    ")):
-            k, what = chunk.split("  ", 1)
-            parts.append(key(k, what))
+        if lit:
+            mode = f"[b {C['ink']} on {tab.color}]  Tabs  [/]"
+            parts = [key("↑↓", "Switch tab"), key("→", "Open"), key("1-7", "Jump")]
+        else:
+            mode = f"[b {C['ink']} on {tab.color}]  {tab.label}  [/]"
+            move = {"home": "Scroll", "hobbies": "Scroll", "chat": ""}.get(tab.id, "Move")
+            parts = [key("↑↓", move)] if move else []
+            for chunk in filter(None, tab.hint.split("    ")):
+                k, what = chunk.split("  ", 1)
+                parts.append(key(k, what))
+            parts.append(key("Esc" if tab.id == "chat" else "←", "Back to tabs"))
         parts.append(key("Q", "Quit"))
-        self.query_one("#hints", Static).update("  " + "    ".join(parts))
+        self.query_one("#hints", Static).update(f"  {mode}    " + "    ".join(parts))
 
     # events / actions
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:

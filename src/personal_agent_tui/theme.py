@@ -6,6 +6,7 @@ on the dark gray, or as a fill behind near-black text.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 from textual.theme import Theme
@@ -48,23 +49,53 @@ THEME = Theme(
 )
 
 
+# Icons are Nerd Font glyphs (flat pictograms, one cell wide, drawn in one
+# colour). Without a Nerd Font in the terminal, set PA_ICONS=basic.
+NERD = {
+    "home": "\uf015",       # house
+    "review": "\uf01c",     # inbox
+    "work": "\uf0b1",       # briefcase
+    "hobbies": "\U000f03d8",  # palette
+    "people": "\uf0c0",     # users
+    "habits": "\U000f0e66",   # sprout
+    "chat": "\uf086",       # speech bubbles
+    "calendar": "\uf073",
+    "todo": "\uf046",       # checked box
+    "assistant": "\uf075",  # speech bubble
+    "Climbing": "\U000f0d7f",  # hiking
+    "Chinese": "\uf1ab",    # language
+    "Reading": "\uf02d",    # book
+    "Photography": "\uf030",  # camera
+}
+BASIC = {
+    "home": "⌂", "review": "✓", "work": "◆", "hobbies": "✿", "people": "☻",
+    "habits": "●", "chat": "❯", "calendar": "◷", "todo": "☑", "assistant": "❯",
+    "Climbing": "▲", "Chinese": "✎", "Reading": "≡", "Photography": "◉",
+}
+ICONS = BASIC if os.environ.get("PA_ICONS", "nerd").lower() == "basic" else NERD
+
+
+def icon(name: str) -> str:
+    return ICONS.get(name, "•")
+
+
 @dataclass(frozen=True)
 class Tab:
     id: str
-    icon: str   # one flat, single-width symbol, drawn in the tab colour
+    icon: str   # one flat, single-width pictogram, drawn in the tab colour
     label: str
     color: str
     hint: str   # extra keys shown at the bottom while this tab is open
 
 
 TABS: list[Tab] = [
-    Tab("home", "⌂", "Home", C["azure"], ""),
-    Tab("review", "✓", "To review", C["amber"], "A  Approve    X  Decline"),
-    Tab("work", "◆", "Work", C["teal"], ""),
-    Tab("hobbies", "✿", "Hobbies", C["rose"], ""),
-    Tab("people", "☻", "People", C["peach"], ""),
-    Tab("habits", "●", "Habits", C["green"], "Space  Done today"),
-    Tab("chat", "❯", "Chat", C["orange"], "Enter  Send"),
+    Tab("home", icon("home"), "Home", C["azure"], ""),
+    Tab("review", icon("review"), "To review", C["amber"], "A  Approve    X  Decline"),
+    Tab("work", icon("work"), "Work", C["teal"], ""),
+    Tab("hobbies", icon("hobbies"), "Hobbies", C["rose"], ""),
+    Tab("people", icon("people"), "People", C["peach"], ""),
+    Tab("habits", icon("habits"), "Habits", C["green"], "Space  Done today"),
+    Tab("chat", icon("chat"), "Chat", C["orange"], "Enter  Send"),
 ]
 
 TAB_BY_ID = {t.id: t for t in TABS}

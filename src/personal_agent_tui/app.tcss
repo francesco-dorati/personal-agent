@@ -41,7 +41,9 @@ Screen { background: #262624; color: #ece9e4; }
     height: auto;
     border-left: thick #262624;
 }
-.pick > ListItem.-highlight { background: #30302e; border-left: thick #6d6963; }
+.pick > ListItem.-highlight { background: #2c2c2a; border-left: thick #3e3d3a; }
+/* the list that has the arrows: brighter row, coloured bar */
+.pick:focus > ListItem.-highlight { background: #3a3936; }
 #review-list:focus > ListItem.-highlight { border-left: thick #e5b85c; }
 #area-list:focus > ListItem.-highlight   { border-left: thick #5ec4b6; }
 #habit-list:focus > ListItem.-highlight  { border-left: thick #8fcf7f; }
@@ -69,7 +71,7 @@ Screen { background: #262624; color: #ece9e4; }
 /* people */
 #people-table { height: auto; max-height: 100%; background: #262624; background-tint: #000000 0%; }
 #people-table > .datatable--header { background: #262624; color: #a9a49c; text-style: bold; }
-#people-table > .datatable--cursor { background: #30302e; }
+#people-table > .datatable--cursor { background: #2c2c2a; }
 #people-table:focus > .datatable--cursor { background: #f0a37a; color: #1a1918; text-style: bold; }
 #people-table > .datatable--hover { background: #30302e; }
 
