@@ -16,14 +16,12 @@ uv run agent-tui
 Your name on Home comes from `PA_USER_NAME`. Use a terminal with full colour
 (iTerm2, Ghostty, WezTerm, Kitty); macOS Terminal shows washed-out colours.
 
-The icons come from a **Nerd Font**. Install one and pick it in your terminal's
-font settings:
-
-```
-brew install --cask font-jetbrains-mono-nerd-font
-```
-
-No Nerd Font? Run with `PA_ICONS=basic` for plain symbols instead of boxes.
+**Icons work in any terminal.** On first launch the app shows three small
+pictures and asks if you can see them. Yes: it uses flat picture icons (from a
+Nerd Font, which some terminals such as Ghostty and WezTerm have built in). No:
+it uses simple symbols every font can draw. The answer is saved in
+`~/.config/personal-agent-tui/settings.json`; press **I** to switch any time,
+or force it with `PA_ICONS=nerd` / `PA_ICONS=basic`.
 
 **Where the arrows go.** When the sidebar has the arrows, the open tab is a
 bright coloured block and the bottom bar says **Tabs**. Press → and the sidebar
@@ -38,11 +36,14 @@ names the page you are in. ← or Esc takes you back.
 | 1 – 7      | Jump to a tab                        |
 | A / X      | To review: approve / decline         |
 | Space      | Habits: done today                   |
+| I          | Switch picture icons / simple symbols |
 | Q          | Quit                                 |
 
 ## Files
 
-- `theme.py`: colours, icons (Nerd Font + basic fallback), the tab list
+- `theme.py`: colours, the two icon sets, the tab list
+- `iconcheck.py`: the first-launch "can you see these?" check
+- `settings.py`: the small per-machine settings file
 - `panels.py`: one page per tab
 - `app.py`: sidebar, layout, moving between tabs
 - `app.tcss`: spacing and neutral colours

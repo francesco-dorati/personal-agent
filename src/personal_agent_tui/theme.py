@@ -6,7 +6,6 @@ on the dark gray, or as a fill behind near-black text.
 """
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 
 from textual.theme import Theme
@@ -49,53 +48,68 @@ THEME = Theme(
 )
 
 
-# Icons are Nerd Font glyphs (flat pictograms, one cell wide, drawn in one
-# colour). Without a Nerd Font in the terminal, set PA_ICONS=basic.
+# Two icon sets. NERD: flat pictograms from a Nerd Font (house, inbox, ...).
+# BASIC: plain symbols that every font can draw. Which one is used is decided
+# once per machine (see iconcheck.py), can be forced with PA_ICONS=nerd|basic,
+# and switched any time with the I key.
 NERD = {
-    "home": "\uf015",       # house
-    "review": "\uf01c",     # inbox
-    "work": "\uf0b1",       # briefcase
+    "home": "\uf015",         # house
+    "review": "\uf01c",       # inbox
+    "work": "\uf0b1",         # briefcase
     "hobbies": "\U000f03d8",  # palette
-    "people": "\uf0c0",     # users
+    "people": "\uf0c0",       # users
     "habits": "\U000f0e66",   # sprout
-    "chat": "\uf086",       # speech bubbles
+    "chat": "\uf086",         # speech bubbles
     "calendar": "\uf073",
-    "todo": "\uf046",       # checked box
-    "assistant": "\uf075",  # speech bubble
-    "Climbing": "\U000f0d7f",  # hiking
-    "Chinese": "\uf1ab",    # language
-    "Reading": "\uf02d",    # book
+    "todo": "\uf046",         # checked box
+    "assistant": "\uf075",    # speech bubble
+    "Climbing": "\U000f0d7f", # hiking
+    "Chinese": "\uf1ab",      # language
+    "Reading": "\uf02d",      # book
     "Photography": "\uf030",  # camera
 }
 BASIC = {
-    "home": "⌂", "review": "✓", "work": "◆", "hobbies": "✿", "people": "☻",
-    "habits": "●", "chat": "❯", "calendar": "◷", "todo": "☑", "assistant": "❯",
-    "Climbing": "▲", "Chinese": "✎", "Reading": "≡", "Photography": "◉",
+    "home": "⌂", "review": "✉", "work": "⚒", "hobbies": "✿", "people": "☺",
+    "habits": "↻", "chat": "❯", "calendar": "◷", "todo": "☑", "assistant": "❯",
+    "Climbing": "▲", "Chinese": "✎", "Reading": "☰", "Photography": "◉",
 }
-ICONS = BASIC if os.environ.get("PA_ICONS", "nerd").lower() == "basic" else NERD
+SETS = {"nerd": NERD, "basic": BASIC}
+_mode = "basic"
+
+
+def icon_mode() -> str:
+    return _mode
+
+
+def set_icon_mode(mode: str) -> None:
+    global _mode
+    _mode = mode if mode in SETS else "basic"
 
 
 def icon(name: str) -> str:
-    return ICONS.get(name, "•")
+    return SETS[_mode].get(name, "•")
 
 
 @dataclass(frozen=True)
 class Tab:
     id: str
-    icon: str   # one flat, single-width pictogram, drawn in the tab colour
     label: str
     color: str
     hint: str   # extra keys shown at the bottom while this tab is open
 
+    @property
+    def icon(self) -> str:   # one flat, single-width pictogram, drawn in the tab colour
+        return icon(self.id)
+
 
 TABS: list[Tab] = [
-    Tab("home", icon("home"), "Home", C["azure"], ""),
-    Tab("review", icon("review"), "To review", C["amber"], "A  Approve    X  Decline"),
-    Tab("work", icon("work"), "Work", C["teal"], ""),
-    Tab("hobbies", icon("hobbies"), "Hobbies", C["rose"], ""),
-    Tab("people", icon("people"), "People", C["peach"], ""),
-    Tab("habits", icon("habits"), "Habits", C["green"], "Space  Done today"),
-    Tab("chat", icon("chat"), "Chat", C["orange"], "Enter  Send"),
+    Tab("home", "Home", C["azure"], ""),
+    Tab("review", "To review", C["amber"], "A  Approve    X  Decline"),
+    Tab("work", "Work", C["teal"], ""),
+    Tab("hobbies", "Hobbies", C["rose"], ""),
+    Tab("people", "People", C["peach"], ""),
+    Tab("habits", "Habits", C["green"], "Space  Done today"),
+    Tab("chat", "Chat", C["orange"], "Enter  Send"),
 ]
 
 TAB_BY_ID = {t.id: t for t in TABS}

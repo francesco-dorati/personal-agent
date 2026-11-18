@@ -11,9 +11,10 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import ContentSwitcher, ListItem, ListView, Static
 
-from . import mock
+from . import mock, settings
+from .iconcheck import IconCheckApp
 from .panels import PANELS, HomePanel
-from .theme import C, TABS, TAB_BY_ID, THEME, Tab
+from .theme import C, SETS, TABS, TAB_BY_ID, THEME, Tab, icon_mode, set_icon_mode
 
 
 def user_name() -> str:
@@ -60,6 +61,7 @@ class PersonalAgentApp(App):
     TITLE = "Personal Agent"
     BINDINGS = [
         Binding("q", "quit", "Quit"),
+        Binding("i", "toggle_icons", "Icons", show=False),
         Binding("escape", "focus_sidebar", "Back", show=False),
         Binding("left", "focus_sidebar", "Back", show=False),
         *[Binding(str(i + 1), f"jump('{t.id}')", t.label, show=False) for i, t in enumerate(TABS)],
@@ -121,7 +123,7 @@ class PersonalAgentApp(App):
 
         if lit:
             mode = f"[b {C['ink']} on {tab.color}]  Tabs  [/]"
-            parts = [key("↑↓", "Switch tab"), key("→", "Open"), key("1-7", "Jump")]
+            parts = [key("↑↓", "Switch tab"), key("→", "Open"), key("1-7", "Jump"), key("I", "Icons")]
         else:
             mode = f"[b {C['ink']} on {tab.color}]  {tab.label}  [/]"
             move = {"home": "Scroll", "hobbies": "Scroll", "chat": ""}.get(tab.id, "Move")
@@ -148,12 +150,38 @@ class PersonalAgentApp(App):
     def action_focus_sidebar(self) -> None:
         self.query_one(Sidebar).focus()
 
+    async def action_toggle_icons(self) -> None:
+        """Switch between picture icons and simple symbols, and remember it."""
+        tab, on_page = self.current(), not self.sidebar_lit()
+        set_icon_mode("basic" if icon_mode() == "nerd" else "nerd")
+        settings.save(icons=icon_mode())
+        await self.recompose()
+        self.query_one("#switcher", ContentSwitcher).current = tab
+        self.query_one(Sidebar).index = [t.id for t in TABS].index(tab)
+        (self.action_focus_content if on_page else self.action_focus_sidebar)()
+        self.refresh_badges()
+        self.notify("Picture icons" if icon_mode() == "nerd" else "Simple symbols", title="Icons")
+
     def action_jump(self, tab_id: str) -> None:
         self.query_one(Sidebar).index = [t.id for t in TABS].index(tab_id)
         self.switch_to(tab_id)
 
 
+def choose_icons() -> str:
+    """PA_ICONS wins, then the saved answer, else ask once and save it."""
+    forced = os.environ.get("PA_ICONS", "").lower()
+    if forced in SETS:
+        return forced
+    saved = settings.load().get("icons")
+    if saved in SETS:
+        return saved
+    answer = IconCheckApp().run() or "basic"
+    settings.save(icons=answer)
+    return answer
+
+
 def main() -> None:
+    set_icon_mode(choose_icons())
     PersonalAgentApp().run()
 
 
