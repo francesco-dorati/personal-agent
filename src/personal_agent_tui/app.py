@@ -5,7 +5,6 @@ Arrows move, → opens, ← or Esc goes back, 1-7 jump to a tab, Q quits.
 from __future__ import annotations
 
 import os
-import pwd
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -21,9 +20,10 @@ def user_name() -> str:
     """PA_USER_NAME, else the first name of the account owner."""
     name = os.environ.get("PA_USER_NAME") or os.environ.get("USER_NAME")
     if not name:
-        try:
+        try:  # macOS/Linux: first name of the account owner (no pwd module on Windows)
+            import pwd
             name = pwd.getpwuid(os.getuid()).pw_gecos.split(",")[0].split(" ")[0]
-        except (KeyError, IndexError):
+        except (ImportError, KeyError, IndexError, AttributeError):
             name = ""
     return name or "there"
 

@@ -68,7 +68,7 @@ class HomePanel(VerticalScroll, Panel):
         part = ("evening" if now.hour < 5 else "morning" if now.hour < 12
                 else "afternoon" if now.hour < 18 else "evening")
         yield Static(f"[b {C['text']}]Good {part}, {self.user}[/]", id="hello")
-        yield Static(f"[{C['muted']}]{now:%A, %-d %B}[/]", id="date")
+        yield Static(f"[{C['muted']}]{now:%A}, {now.day} {now:%B}[/]", id="date")
 
         pending = sum(1 for q in mock.QUEUE if q["status"] == "PENDING")
         due = sum(1 for _, w, done in mock.COMMITMENTS if w == "today" and not done)
