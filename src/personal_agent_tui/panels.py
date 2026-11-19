@@ -29,7 +29,7 @@ def kind(q: dict) -> str:
 def card(title: str, body: str, color: str, *, classes: str = "") -> Static:
     """A rounded box with its title in the top border, like the first sketch."""
     w = Static(body, classes=f"card {classes}".strip())
-    w.border_title = f"[b {color}] {title} [/]"
+    w.border_title = f"[b {color}] {title} [/]"  # icons in titles: bold is fine now (same font)
     w.styles.border = ("round", color)
     return w
 

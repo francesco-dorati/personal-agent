@@ -65,7 +65,7 @@ class NavItem(ListItem):
             badge = (f"  [b {t.color} on {C['ink']}] {self.badge} [/]" if active and lit
                      else f"  [b {C['ink']} on {C['amber']}] {self.badge} [/]" if lit or active
                      else f"  [{C['amber']}]{self.badge}[/]")
-        text = (f"[{ico}]{t.icon}[/]   [b {name}]{t.label}[/]{badge}\n"
+        text = (f"[not b {ico}]{t.icon}[/]   [b {name}]{t.label}[/]{badge}\n"
                 f"    [{sub}]{subtitle(t.id)}[/]")
         self.styles.background = bg
         label = self.query_one(Static)
@@ -134,7 +134,7 @@ class PersonalAgentApp(App):
         for item in self.query(NavItem):
             item.paint(item.tab.id == tab.id, lit)
         self.query_one("#title", Static).update(
-            f"[b {tab.color}]{tab.icon}   {tab.label}[/]   [{C['muted']}]{subtitle(tab.id)}[/]")
+            f"[{tab.color}]{tab.icon}[/]   [b {tab.color}]{tab.label}[/]   [{C['muted']}]{subtitle(tab.id)}[/]")
         self.query_one("#title").styles.border_bottom = ("heavy", tab.color)
         self.paint_hints(tab, lit)
 

@@ -22,9 +22,18 @@
         src: url("{{ config.static.url }}fonts/FiraCodeNerdFontMono-Bold.ttf") format("truetype");
         font-weight: bold;
       }
+      /* Icons: the same symbol font for regular AND bold text, so a selected
+         (bold) row draws its icon at the same size as the others. */
       @font-face {
         font-family: "Roboto Mono";
         src: url("{{ config.static.url }}fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
+        font-weight: normal;
+        unicode-range: U+E000-F8FF, U+F0000-FFFFD;
+      }
+      @font-face {
+        font-family: "Roboto Mono";
+        src: url("{{ config.static.url }}fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
+        font-weight: bold;
         unicode-range: U+E000-F8FF, U+F0000-FFFFD;
       }
       html, body { background: #262624; margin: 0; overflow: hidden; }
@@ -81,6 +90,7 @@
             document.fonts.load('16px "Roboto Mono"', "Ag"),
             document.fonts.load('bold 16px "Roboto Mono"', "Ag"),
             document.fonts.load('16px "Roboto Mono"', ""),
+            document.fonts.load('bold 16px "Roboto Mono"', ""),
           ]);
         } catch (err) {}
         if (startTerminal) startTerminal(e);
