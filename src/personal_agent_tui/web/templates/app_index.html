@@ -10,7 +10,7 @@
          code points it covers. -->
     <link rel="preload" as="font" type="font/ttf" crossorigin href="{{ config.static.url }}fonts/FiraCodeNerdFontMono-Regular.ttf" />
     <link rel="preload" as="font" type="font/ttf" crossorigin href="{{ config.static.url }}fonts/FiraCodeNerdFontMono-Bold.ttf" />
-    <link rel="preload" as="font" type="font/ttf" crossorigin href="{{ config.static.url }}fonts/SymbolsNerdFont-Regular.ttf" />
+    <link rel="preload" as="font" type="font/ttf" crossorigin href="{{ config.static.url }}fonts/SymbolsNerdFontMono-Regular.ttf" />
     <style>
       @font-face {
         font-family: "Roboto Mono";
@@ -24,7 +24,7 @@
       }
       @font-face {
         font-family: "Roboto Mono";
-        src: url("{{ config.static.url }}fonts/SymbolsNerdFont-Regular.ttf") format("truetype");
+        src: url("{{ config.static.url }}fonts/SymbolsNerdFontMono-Regular.ttf") format("truetype");
         unicode-range: U+E000-F8FF, U+F0000-FFFFD;
       }
       html, body { background: #262624; margin: 0; overflow: hidden; }
@@ -78,9 +78,9 @@
       window.addEventListener("load", async (e) => {
         try {
           await Promise.all([
-            document.fonts.load('15px "Roboto Mono"', "Ag"),
-            document.fonts.load('bold 15px "Roboto Mono"', "Ag"),
-            document.fonts.load('15px "Roboto Mono"', ""),
+            document.fonts.load('16px "Roboto Mono"', "Ag"),
+            document.fonts.load('bold 16px "Roboto Mono"', "Ag"),
+            document.fonts.load('16px "Roboto Mono"', ""),
           ]);
         } catch (err) {}
         if (startTerminal) startTerminal(e);

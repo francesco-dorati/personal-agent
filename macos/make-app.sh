@@ -4,12 +4,19 @@
 # its own fonts, so the icons always render.
 #
 #   zsh macos/make-app.sh            # run once from the repo folder
+#   zsh macos/make-app.sh buddy      # pick a logo: buddy, sprout, star, hearth, owl
 #
 # Needs uv and Apple's command line tools (swiftc). Re-run it after moving
 # this folder or after pulling changes to macos/app/.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
+LOGO="${1:-}"
+ICON="$REPO/macos/PersonalAgent.icns"
+if [[ -n "$LOGO" ]]; then
+  ICON="$REPO/macos/logos/logo-$LOGO.icns"
+  [[ -f "$ICON" ]] || { echo "No logo called '$LOGO'. Pick one of: buddy sprout star hearth owl" >&2; exit 1; }
+fi
 UV="$(command -v uv || true)"
 [[ -n "$UV" ]] || { echo "uv not found: https://docs.astral.sh/uv/" >&2; exit 1; }
 if ! command -v swiftc >/dev/null; then
@@ -25,7 +32,7 @@ echo "• Building $APP"
 osascript -e 'tell application "Personal Agent" to quit' >/dev/null 2>&1 || true
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$REPO/macos/PersonalAgent.icns" "$APP/Contents/Resources/PersonalAgent.icns"
+cp "$ICON" "$APP/Contents/Resources/PersonalAgent.icns"
 
 # What the app runs: the local server for the TUI page
 cat > "$APP/Contents/Resources/server.sh" <<SH

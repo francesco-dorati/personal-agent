@@ -62,7 +62,7 @@ def main() -> None:
         statics_path=statics(),
         templates_path=WEB / "templates",
     )
-    print(f"READY http://127.0.0.1:{port}/?fontsize=15", flush=True)
+    print(f"READY http://127.0.0.1:{port}/?fontsize=16", flush=True)
     server.serve()
 
 

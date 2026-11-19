@@ -37,11 +37,19 @@ names the page you are in. ← or Esc takes you back.
 | Space      | Habits: done today                   |
 | Q          | Quit                                 |
 
+## Platforms
+
+The TUI runs in any terminal on macOS, Linux and Windows, and `agent-tui-serve`
+serves it to any browser. Only the app window below is macOS-specific.
+
 ## Use it like an app (macOS)
 
 ```
 zsh macos/make-app.sh
 ```
+
+Add a logo name to choose the app icon: `buddy`, `sprout`, `star`, `hearth` or
+`owl` (pictures in `macos/logos/`), e.g. `zsh macos/make-app.sh owl`.
 
 Builds **Personal Agent.app** in `~/Applications`: its own window, menu and Dock
 icon (not a terminal tab). Drag it into the Dock to pin it, or open it from
