@@ -6,10 +6,12 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "textual>=8,<9",
+    "textual-serve>=1.1,<2",
 ]
 
 [project.scripts]
 agent-tui = "personal_agent_tui.app:main"
+agent-tui-serve = "personal_agent_tui.serve:main"
 
 [build-system]
 requires = ["hatchling"]

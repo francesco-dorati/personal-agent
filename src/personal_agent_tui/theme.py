@@ -6,6 +6,7 @@ on the dark gray, or as a fill behind near-black text.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 from textual.theme import Theme
@@ -48,27 +49,47 @@ THEME = Theme(
 )
 
 
-# Icons are drawn with block characters (▗▟█▙▖...), which every monospace
-# font has, so they need no special font. BIG: 5 cells x 3 lines, for the
-# sidebar and page titles. SMALL: one-character symbols for card titles.
-BIG = {
-    "home": [' ▄█▄ ', '▜███▛', '▐█ █▌'],
-    "review": ['   ▗█', '█▖▗█▘', '▝██▘ '],
-    "work": [' ▐▀▌ ', '██▀██', '█████'],
-    "hobbies": ['▟█▄█▙', '▜███▛', ' ▝█▘ '],
-    "people": [' ▐█▌ ', ' ▄▄▄ ', '▐███▌'],
-    "habits": ['▜▙ ▟▛', ' ▝█▘ ', ' ▄█▄ '],
-    "chat": ['▟███▙', '▜███▛', '▗▛   '],
+# Icons. NERD: flat one-line pictograms (house, inbox, briefcase...) from the
+# Nerd Font icon set. They are used where that font is guaranteed: inside
+# Personal Agent.app (which ships the font), Ghostty and WezTerm (built in), or
+# when PA_ICONS=nerd. Anywhere else: BASIC symbols that every font can draw.
+NERD = {
+    "home": "\uf015",          # house
+    "review": "\uf01c",        # inbox
+    "work": "\uf0b1",          # briefcase
+    "hobbies": "\U000f03d8",   # palette
+    "people": "\uf0c0",        # users
+    "habits": "\U000f0e66",    # sprout
+    "chat": "\uf086",          # speech bubbles
+    "calendar": "\uf073",
+    "todo": "\uf046",          # checked box
+    "assistant": "\uf075",     # speech bubble
+    "Climbing": "\U000f0d7f",  # hiking
+    "Chinese": "\uf1ab",       # language
+    "Reading": "\uf02d",       # book
+    "Photography": "\uf030",   # camera
 }
-SMALL = {
-    "home": "⌂", "review": "✓", "work": "⚒", "hobbies": "♥", "people": "☺",
+BASIC = {
+    "home": "⌂", "review": "✉", "work": "⚒", "hobbies": "♥", "people": "☺",
     "habits": "↻", "chat": "❯", "calendar": "◷", "todo": "☑", "assistant": "❯",
     "Climbing": "▲", "Chinese": "✎", "Reading": "☰", "Photography": "◉",
 }
 
 
+def _icons() -> dict[str, str]:
+    forced = os.environ.get("PA_ICONS", "").lower()
+    if forced in ("nerd", "basic"):
+        return NERD if forced == "nerd" else BASIC
+    if os.environ.get("PA_IN_APP") or os.environ.get("TERM_PROGRAM", "").lower() in ("ghostty", "wezterm"):
+        return NERD
+    return BASIC
+
+
+ICONS = _icons()
+
+
 def icon(name: str) -> str:
-    return SMALL.get(name, "•")
+    return ICONS.get(name, "•")
 
 
 @dataclass(frozen=True)
@@ -79,12 +100,8 @@ class Tab:
     hint: str   # extra keys shown at the bottom while this tab is open
 
     @property
-    def icon(self) -> str:
+    def icon(self) -> str:   # one flat pictogram, drawn in the tab colour
         return icon(self.id)
-
-    @property
-    def big(self) -> list[str]:   # three lines, drawn in the tab colour
-        return BIG[self.id]
 
 
 TABS: list[Tab] = [

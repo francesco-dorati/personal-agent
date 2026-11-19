@@ -16,8 +16,11 @@ uv run agent-tui
 Your name on Home is your Mac account's first name (or `PA_USER_NAME`). Use a terminal with full colour
 (iTerm2, Ghostty, WezTerm, Kitty); macOS Terminal shows washed-out colours.
 
-**Icons work in any terminal.** They are drawn with block characters
-(`▗▟█▙▖`), which every monospace font has, so no special font is needed.
+**Icons.** In the Mac app (below) the sidebar has real icons: a house, an
+inbox, a briefcase, a palette, people, a sprout, speech bubbles. The app ships
+its own fonts, so they always show. In a terminal they also show in Ghostty and
+WezTerm (icon font built in); anywhere else simple symbols are used
+(`PA_ICONS=nerd` forces the icons).
 
 **Where the arrows go.** When the sidebar has the arrows, the open tab is a
 bright coloured block and the bottom bar says **Tabs**. Press → and the sidebar
@@ -40,16 +43,20 @@ names the page you are in. ← or Esc takes you back.
 zsh macos/make-app.sh
 ```
 
-This builds **Personal Agent.app** in `~/Applications` with its own icon. Drag
-it into the Dock to pin it, or open it from Spotlight/Raycast by typing
-"Personal Agent". Clicking it opens a window of your terminal (Ghostty if
-installed, else iTerm2, else Terminal) running the app. Re-run the script if you
-move this folder.
+Builds **Personal Agent.app** in `~/Applications`: its own window, menu and Dock
+icon (not a terminal tab). Drag it into the Dock to pin it, or open it from
+Spotlight/Raycast. Q in the app (or ⌘Q) closes it. Needs Apple's command line
+tools (`xcode-select --install`). Re-run the script after moving this folder.
+If something goes wrong, see `~/Library/Logs/PersonalAgent.log`.
+
+How it works: `agent-tui-serve` serves the TUI as a web page (textual-serve)
+with bundled fonts, and a small Swift window (`macos/app/main.swift`) shows it.
 
 ## Files
 
-- `theme.py`: colours, the block-character icons, the tab list
-- `macos/`: the app icon and the script that builds Personal Agent.app
+- `theme.py`: colours, icons, the tab list
+- `serve.py`, `web/`: the page for the Mac app (template + bundled fonts)
+- `macos/`: the app icon, the Swift window and the script that builds the app
 - `panels.py`: one page per tab
 - `app.py`: sidebar, layout, moving between tabs
 - `app.tcss`: spacing and neutral colours

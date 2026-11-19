@@ -5,17 +5,17 @@ Screen { background: #262624; color: #ece9e4; }
 #body { height: 1fr; }
 
 /* sidebar */
-#side { width: 30; background: #1f1e1d; }
+#side { width: 28; background: #1f1e1d; }
 #brand { height: 3; padding: 1 2 0 2; }
 #sidebar { height: 1fr; background: #1f1e1d; background-tint: #000000 0%; padding: 0 1; }
-#sidebar > ListItem { height: 3; padding: 0 1; margin-bottom: 1; background: #1f1e1d; }
+#sidebar > ListItem { height: 2; padding: 0 1 0 2; margin-bottom: 1; background: #1f1e1d; }
 #sidebar > ListItem.-highlight,
 #sidebar:focus > ListItem.-highlight { color: #1a1918; }
 #conn { height: 2; padding: 0 2; }
 
 /* main */
 #main { width: 1fr; padding: 1 3 0 3; }
-#title { height: 4; margin-bottom: 1; }
+#title { height: 2; margin-bottom: 1; }
 #switcher, .panel { height: 1fr; background: #262624; }
 
 /* rounded cards, title in the border */

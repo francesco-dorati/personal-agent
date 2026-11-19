@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ application.name or 'Personal Agent' }}</title>
+    <link rel="stylesheet" href="{{ config.static.url }}css/xterm.css" />
+    <!-- The terminal script asks for 'Roboto Mono'. We answer with Fira Code for
+         text and the Nerd Font symbols for icons, both shipped with the app, so
+         the icons show whatever fonts the Mac has. The last face wins for the
+         code points it covers. -->
+    <link rel="preload" as="font" type="font/ttf" crossorigin href="{{ config.static.url }}fonts/FiraCodeNerdFontMono-Regular.ttf" />
+    <link rel="preload" as="font" type="font/ttf" crossorigin href="{{ config.static.url }}fonts/FiraCodeNerdFontMono-Bold.ttf" />
+    <link rel="preload" as="font" type="font/ttf" crossorigin href="{{ config.static.url }}fonts/SymbolsNerdFont-Regular.ttf" />
+    <style>
+      @font-face {
+        font-family: "Roboto Mono";
+        src: url("{{ config.static.url }}fonts/FiraCodeNerdFontMono-Regular.ttf") format("truetype");
+        font-weight: normal;
+      }
+      @font-face {
+        font-family: "Roboto Mono";
+        src: url("{{ config.static.url }}fonts/FiraCodeNerdFontMono-Bold.ttf") format("truetype");
+        font-weight: bold;
+      }
+      @font-face {
+        font-family: "Roboto Mono";
+        src: url("{{ config.static.url }}fonts/SymbolsNerdFont-Regular.ttf") format("truetype");
+        unicode-range: U+E000-F8FF, U+F0000-FFFFD;
+      }
+      html, body { background: #262624; margin: 0; overflow: hidden; }
+      .font-warmup { position: absolute; left: -9999px; font-family: "Roboto Mono"; }
+
+      .dialog-container {
+        position: absolute; width: 100vw; height: 100vh;
+        display: flex; align-items: center; justify-content: center; z-index: 10;
+      }
+      .shade { position: absolute; width: 100%; height: 100%; background: #262624; }
+      .intro {
+        z-index: 20; padding: 28px 40px; font-size: 15px;
+        font-family: "Roboto Mono", menlo, monospace; text-align: center;
+        color: #a9a49c; background: #1f1e1d; border: 1px solid #3e3d3a; border-radius: 10px;
+      }
+      .intro b { color: #ece9e4; display: block; margin-bottom: 6px; font-size: 17px; }
+      body.-first-byte .intro-dialog { display: none; }
+      body .textual-terminal { opacity: 0; transition: opacity 0.25s ease-out; }
+      body.-first-byte .textual-terminal { opacity: 1; }
+      .closed-dialog { display: none; }
+      body.-closed .closed-dialog { display: flex; }
+      button {
+        margin-top: 14px; padding: 8px 18px; border: none; border-radius: 6px;
+        background: #d97757; color: #1a1918; font: bold 14px "Roboto Mono", menlo, monospace; cursor: pointer;
+      }
+      #start { display: none; }
+      #start.-delay { display: inline-block; }
+    </style>
+    <script>
+      // Safe mode (?dpr=1): draw at 1x so the layout is always right. Used
+      // automatically if the terminal's drawing scale doesn't match the screen.
+      if (new URLSearchParams(location.search).get("dpr") === "1") {
+        Object.defineProperty(window, "devicePixelRatio", { get: () => 1 });
+      }
+    </script>
+    <script src="{{ config.static.url }}js/textual.js"></script>
+    <script>
+      function getStartUrl() {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        params.delete("delay");
+        return url.pathname + "?" + params.toString();
+      }
+      async function refresh() {
+        window.location.href = getStartUrl();
+      }
+      // Start the terminal only once our fonts are ready; otherwise it measures
+      // the cell size with a fallback font and the layout comes out wrong.
+      const startTerminal = window.onload;
+      window.onload = null;
+      window.addEventListener("load", async (e) => {
+        try {
+          await Promise.all([
+            document.fonts.load('15px "Roboto Mono"', "Ag"),
+            document.fonts.load('bold 15px "Roboto Mono"', "Ag"),
+            document.fonts.load('15px "Roboto Mono"', ""),
+          ]);
+        } catch (err) {}
+        if (startTerminal) startTerminal(e);
+        setTimeout(() => document.querySelector(".xterm-helper-textarea")?.focus(), 300);
+        setTimeout(checkScale, 1500);
+      });
+      function checkScale() {
+        const dpr = window.devicePixelRatio || 1;
+        const params = new URLSearchParams(location.search);
+        if (dpr <= 1 || params.get("dpr") === "1") return;
+        const canvases = [...document.querySelectorAll(".xterm-screen canvas")]
+          .filter((c) => c.clientWidth > 0);
+        const wrong = canvases.length && canvases.every((c) => c.width < c.clientWidth * dpr * 0.75);
+        if (wrong) {
+          params.set("dpr", "1");
+          location.replace(location.pathname + "?" + params.toString());
+        }
+      }
+      // Tell the Mac app when the session ends (Q pressed), so it can close.
+      window.addEventListener("DOMContentLoaded", () => {
+        new MutationObserver(() => {
+          if (document.body.classList.contains("-closed")) {
+            try { window.webkit.messageHandlers.personalAgent.postMessage("closed"); } catch (e) {}
+          }
+        }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+      });
+    </script>
+  </head>
+  <body>
+    <span class="font-warmup">a<b>b</b>&#xf015;</span>
+    <div class="dialog-container intro-dialog">
+      <div class="shade"></div>
+      <div class="intro">
+        <b>{{ application.name or 'Personal Agent' }}</b>Starting…
+        <br /><button type="button" onClick="refresh()" id="start">Start</button>
+      </div>
+    </div>
+
+    <div class="dialog-container closed-dialog">
+      <div class="shade"></div>
+      <div class="intro">
+        <b>See you later</b>The session has ended.
+        <br /><button type="button" onClick="refresh()">Open again</button>
+      </div>
+    </div>
+
+    <div
+      id="terminal"
+      class="textual-terminal"
+      data-session-websocket-url="{{ app_websocket_url }}"
+      data-font-size="{{ font_size }}"
+    ></div>
+  </body>
+</html>

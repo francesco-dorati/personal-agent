@@ -65,10 +65,8 @@ class NavItem(ListItem):
             badge = (f"  [b {t.color} on {C['ink']}] {self.badge} [/]" if active and lit
                      else f"  [b {C['ink']} on {C['amber']}] {self.badge} [/]" if lit or active
                      else f"  [{C['amber']}]{self.badge}[/]")
-        a, b, c = t.big
-        text = (f"[{ico}]{a}[/]   [b {name}]{t.label}[/]{badge}\n"
-                f"[{ico}]{b}[/]   [{sub}]{subtitle(t.id)}[/]\n"
-                f"[{ico}]{c}[/]")
+        text = (f"[{ico}]{t.icon}[/]   [b {name}]{t.label}[/]{badge}\n"
+                f"    [{sub}]{subtitle(t.id)}[/]")
         self.styles.background = bg
         label = self.query_one(Static)
         label.styles.background = bg
@@ -87,6 +85,7 @@ class PersonalAgentApp(App):
     TITLE = "Personal Agent"
     BINDINGS = [
         Binding("q", "quit", "Quit"),
+        Binding("ctrl+q", "quit", "Quit", show=False),
         Binding("escape", "focus_sidebar", "Back", show=False),
         Binding("left", "focus_sidebar", "Back", show=False),
         *[Binding(str(i + 1), f"jump('{t.id}')", t.label, show=False) for i, t in enumerate(TABS)],
@@ -120,8 +119,13 @@ class PersonalAgentApp(App):
     def current(self) -> str:
         return self.query_one("#switcher", ContentSwitcher).current or "home"
 
+    _lit = True
+
     def sidebar_lit(self) -> bool:
-        return isinstance(self.focused, Sidebar)
+        # While the window itself is unfocused nothing has focus: keep the last state.
+        if self.focused is not None:
+            self._lit = isinstance(self.focused, Sidebar)
+        return self._lit
 
     def repaint(self) -> None:
         """Redraw everything that shows where the arrow keys go."""
@@ -129,10 +133,8 @@ class PersonalAgentApp(App):
         lit = self.sidebar_lit()
         for item in self.query(NavItem):
             item.paint(item.tab.id == tab.id, lit)
-        a, b, c = tab.big
         self.query_one("#title", Static).update(
-            f"[{tab.color}]{a}[/]\n[{tab.color}]{b}[/]   [b {tab.color}]{tab.label}[/]"
-            f"   [{C['muted']}]{subtitle(tab.id)}[/]\n[{tab.color}]{c}[/]")
+            f"[b {tab.color}]{tab.icon}   {tab.label}[/]   [{C['muted']}]{subtitle(tab.id)}[/]")
         self.query_one("#title").styles.border_bottom = ("heavy", tab.color)
         self.paint_hints(tab, lit)
 
