@@ -48,8 +48,9 @@ serves it to any browser. Only the app window below is macOS-specific.
 zsh macos/make-app.sh
 ```
 
-Add a logo name to choose the app icon: `buddy`, `sprout`, `star`, `hearth` or
-`owl` (pictures in `macos/logos/`), e.g. `zsh macos/make-app.sh owl`.
+Add a logo name to choose the app icon (pictures in `macos/logos/`): stars
+`star`, `rose`, `needle`, `horizon`, `constellation`, `burst`, `fivepoint`, or
+`buddy`, `sprout`, `hearth`, `owl`. For example `zsh macos/make-app.sh rose`.
 
 Builds **Personal Agent.app** in `~/Applications`: its own window, menu and Dock
 icon (not a terminal tab). Drag it into the Dock to pin it, or open it from

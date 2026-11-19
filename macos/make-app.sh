@@ -4,7 +4,7 @@
 # its own fonts, so the icons always render.
 #
 #   zsh macos/make-app.sh            # run once from the repo folder
-#   zsh macos/make-app.sh buddy      # pick a logo: buddy, sprout, star, hearth, owl
+#   zsh macos/make-app.sh rose       # pick a logo (see macos/logos/)
 #
 # Needs uv and Apple's command line tools (swiftc). Re-run it after moving
 # this folder or after pulling changes to macos/app/.
@@ -15,7 +15,7 @@ LOGO="${1:-}"
 ICON="$REPO/macos/PersonalAgent.icns"
 if [[ -n "$LOGO" ]]; then
   ICON="$REPO/macos/logos/logo-$LOGO.icns"
-  [[ -f "$ICON" ]] || { echo "No logo called '$LOGO'. Pick one of: buddy sprout star hearth owl" >&2; exit 1; }
+  [[ -f "$ICON" ]] || { echo "No logo called '$LOGO'. Pick one of: buddy sprout hearth owl star rose needle horizon constellation burst fivepoint" >&2; exit 1; }
 fi
 UV="$(command -v uv || true)"
 [[ -n "$UV" ]] || { echo "uv not found: https://docs.astral.sh/uv/" >&2; exit 1; }
